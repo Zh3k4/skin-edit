@@ -14,7 +14,7 @@ Functional Requirements:
 	x Display a skin using minecraft steve/alex model
 	x Drag&Drop skins
 	- Toggleable limbs visibility
-	- Reload on texture file change
+	x Reload on texture file change
 
 Non Goals:
 
