@@ -1,0 +1,12 @@
+Skin Editor
+===========
+
+Functional Requirements:
+
+	- Display a skin using minecraft steve/alex model
+	- Toggleable limbs visibility
+	- Reload on texture file change
+
+Non Goals:
+
+	- Any kind of editing
