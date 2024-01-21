@@ -1,6 +1,14 @@
 Skin Editor
 ===========
 
+Builing:
+
+git clone --depth 1 --branch 5.0 https://github.com/raysan5/raylib
+cd raylib/src
+make
+cd ../..
+make
+
 Functional Requirements:
 
 	- Display a skin using minecraft steve/alex model
