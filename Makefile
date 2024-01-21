@@ -10,7 +10,7 @@ LIBS = -Lraylib/src -lraylib -lm
 
 OBJ = src/main.o
 
-skin-edit: $(OBJ)
+skin-view: $(OBJ)
 	@printf 'CCLD\t%s\n' '$@'
 	@$(CC) -o $@ $(OBJ) $(LIBS)
 
@@ -22,6 +22,6 @@ skin-edit: $(OBJ)
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f skin-edit $(OBJ)
+	rm -f skin-view $(OBJ)
 
 .PHONY: clean
