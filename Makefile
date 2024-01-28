@@ -2,6 +2,7 @@ VERSION = 0.2.0
 
 CFLAGS  = --std=c11 -pedantic
 CFLAGS += -Os
+CFLAGS += -s
 CFLAGS += -Wall -Wextra -Werror
 CFLAGS += -Iraylib/src
 CFLAGS += -D_XOPEN_SOURCE=700
