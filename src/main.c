@@ -14,21 +14,22 @@
 #endif
 
 int
-update_model_with_png(char const *const fp, Model *m, Texture2D *t)
+update_model_with_png(char const *const fp, Model *m[2], Texture2D *t)
 {
 	if (!IsFileExtension(fp, ".png")) return 0;
 
 	UnloadTexture(*t);
 	*t = LoadTexture(fp);
-	m->materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = *t;
+	m[0]->materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = *t;
+	m[1]->materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = *t;
 	return 1;
 }
 
 int
-update_skin(char *dst, Model *model, Texture2D *texture)
+update_skin(char *dst, Model *models[2], Texture2D *texture)
 {
 	FilePathList files = LoadDroppedFiles();
-	if (!update_model_with_png(files.paths[0], model, texture)) return 0;
+	if (!update_model_with_png(files.paths[0], models, texture)) return 0;
 	dst = strncpy(dst, files.paths[0], PATH_MAX);
 	UnloadDroppedFiles(files);
 	return 1;
@@ -53,8 +54,10 @@ main(void)
 	InitWindow(400, 600, "SkinView " VERSION);
 
 	Texture2D texture = LoadTexture(skinfile);
-	Model model = LoadModel("resources/models/obj/alex.obj");
-	model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
+	Model skin = LoadModel("resources/models/obj/alex_skin.obj");
+	Model layer = LoadModel("resources/models/obj/alex_layer.obj");
+	skin.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
+	layer.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
 
 	Vector3 position = { 0.0f, 0.0f, 0.0f };
 
@@ -68,12 +71,14 @@ main(void)
 
 	/* Update */
 	if (IsFileDropped()) {
-		update_skin(skinfile, &model, &texture);
+		Model *models[2] = { &skin, &layer };
+		update_skin(skinfile, models, &texture);
 		old_time = GetFileModTime(skinfile);
 	}
 
 	if (queue_update) {
-		update_model_with_png(skinfile, &model, &texture);
+		Model *models[2] = { &skin, &layer };
+		update_model_with_png(skinfile, models, &texture);
 		old_time = GetFileModTime(skinfile);
 		queue_update = 0;
 	}
@@ -106,7 +111,8 @@ main(void)
 	ClearBackground(BLACK);
 
 	BeginMode3D(camera);
-	DrawModel(model, position, 1.0f, WHITE);
+	DrawModel(skin, position, 1.0f, WHITE);
+	DrawModel(layer, position, 1.0f, WHITE);
 	EndMode3D();
 
 	EndDrawing();
@@ -114,7 +120,8 @@ main(void)
 	} /* End Main Loop */
 
 	UnloadTexture(texture);
-	UnloadModel(model);
+	UnloadModel(skin);
+	UnloadModel(layer);
 
 	return EXIT_SUCCESS;
 }
