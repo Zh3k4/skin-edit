@@ -92,6 +92,14 @@ main(void)
 		cursor = !cursor;
 		EnableCursor();
 	}
+	if (IsKeyDown(KEY_LEFT_SHIFT)) {
+		camera.position.y -= 1.0f/16.0f;
+		camera.target.y -= 1.0f/16.0f;
+	}
+	if (IsKeyDown(KEY_SPACE)) {
+		camera.position.y += 1.0f/16.0f;
+		camera.target.y += 1.0f/16.0f;
+	}
 
 	/* Draw */
 	BeginDrawing();
