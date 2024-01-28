@@ -103,7 +103,7 @@ main(void)
 
 	EndDrawing();
 
-	}
+	} /* End Main Loop */
 
 	UnloadTexture(texture);
 	UnloadModel(model);
