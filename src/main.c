@@ -87,7 +87,7 @@ main(void)
 			cursor = !cursor;
 			DisableCursor();
 		}
-		UpdateCamera(&camera, CAMERA_THIRD_PERSON);
+		UpdateCamera(&camera, CAMERA_FIRST_PERSON);
 	} else if (!cursor) {
 		cursor = !cursor;
 		EnableCursor();
