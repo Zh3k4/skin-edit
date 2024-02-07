@@ -1,7 +1,8 @@
 Skin View
 =========
 
-Builing for Linux:
+Builing for Linux
+-----------------
 
 git clone --depth 1 --branch 5.0 https://github.com/raysan5/raylib
 cd raylib/src
@@ -10,27 +11,30 @@ cd ../..
 cp configs/+linux.mk config.mk
 make
 
-Cross-compiling from Linux to Windows:
+Cross-compiling from Linux to Windows
+-------------------------------------
 
-- Either build or download pre-built raylib for mingw-w64:
+# Either build or download pre-built raylib for mingw-w64:
 
 curl -LOJ 'https://github.com/raysan5/raylib/releases/download/5.0/raylib-5.0_win64_mingw-w64.zip'
 ...or...
 wget 'https://github.com/raysan5/raylib/releases/download/5.0/raylib-5.0_win64_mingw-w64.zip' -O raylib-5.0_win64_mingw-w64.zip
 
-- Build the thing:
+# Build the thing:
 
 unzip raylib-5.0_win64_mingw-w64.zip
 cp configs/+mingw.mk config.mk
 make
 
-Functional Requirements:
+Functional Requirements
+-----------------------
 
 	x Display a skin using minecraft steve/alex model
 	x Drag&Drop skins
 	- Toggleable limbs visibility
 	x Reload on texture file change
 
-Non Goals:
+Non Goals
+---------
 
 	- Any kind of editing
