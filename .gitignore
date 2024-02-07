@@ -1,3 +1,9 @@
-skin-view
 *.o
-raylib/
+
+/skin-view
+/skin-view.exe
+
+/config.mk
+
+/raylib/
+/raylib-5.0_win64_mingw-w64/
