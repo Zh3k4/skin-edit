@@ -33,4 +33,4 @@ dist: $(TARGET)
 	cp -t skin-view-$(VERSION) -r \
 		$(TARGET) resources
 	$(ARCHIVE) skin-view-$(VERSION)$(ARCHIVE_EXT) skin-view-$(VERSION)
-	rm -rf skin-view-$(VERSOIN)
+	rm -rf skin-view-$(VERSION)
