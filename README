@@ -8,7 +8,7 @@ git clone --depth 1 --branch 5.0 https://github.com/raysan5/raylib
 cd raylib/src
 make
 cd ../..
-cp configs/+linux.mk config.mk
+cp configs/linux.mk config.mk
 make
 
 Cross-compiling from Linux to Windows
@@ -23,7 +23,7 @@ wget 'https://github.com/raysan5/raylib/releases/download/5.0/raylib-5.0_win64_m
 # Build the thing:
 
 unzip raylib-5.0_win64_mingw-w64.zip
-cp configs/+mingw.mk config.mk
+cp configs/mingw.mk config.mk
 make
 
 Functional Requirements
