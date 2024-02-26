@@ -34,6 +34,11 @@ Functional Requirements
 	- Toggleable limbs visibility
 	x Reload on texture file change
 
+Potential Goals
+---------------
+
+	- Bundle assets into executable
+
 Non Goals
 ---------
 
