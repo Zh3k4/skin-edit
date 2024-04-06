@@ -46,7 +46,7 @@ main(void)
 	camera.projection = CAMERA_PERSPECTIVE;
 
 	char skinfile[PATH_MAX + 1];
-	sprintf(skinfile, "resources/models/obj/osage-chan-lagtrain.png");
+	strcpy(skinfile, "resources/models/obj/osage-chan-lagtrain.png");
 	long old_time = GetFileModTime(skinfile);
 	int queue_update = 0;
 
