@@ -92,18 +92,18 @@ main(void)
 			cursor = !cursor;
 			DisableCursor();
 		}
-		UpdateCamera(&camera, CAMERA_FIRST_PERSON);
+		UpdateCamera(&camera, CAMERA_THIRD_PERSON);
+		if (IsKeyDown(KEY_LEFT_SHIFT)) {
+			camera.position.y -= 1.0f/16.0f;
+			camera.target.y -= 1.0f/16.0f;
+		}
+		if (IsKeyDown(KEY_SPACE)) {
+			camera.position.y += 1.0f/16.0f;
+			camera.target.y += 1.0f/16.0f;
+		}
 	} else if (!cursor) {
 		cursor = !cursor;
 		EnableCursor();
-	}
-	if (IsKeyDown(KEY_LEFT_SHIFT)) {
-		camera.position.y -= 1.0f/16.0f;
-		camera.target.y -= 1.0f/16.0f;
-	}
-	if (IsKeyDown(KEY_SPACE)) {
-		camera.position.y += 1.0f/16.0f;
-		camera.target.y += 1.0f/16.0f;
 	}
 
 	/* Draw */
