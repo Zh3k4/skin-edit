@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <limits.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -36,7 +37,7 @@ update_skin(char *dst, Model *models[2], Texture2D *texture)
 }
 
 int
-main(void)
+main(int argc, char **argv)
 {
 	Camera camera = { 0 };
 	camera.position = (Vector3){ -1.0f, 2.0f, -1.0f };
@@ -49,6 +50,25 @@ main(void)
 	strcpy(skinfile, "resources/models/obj/osage-chan-lagtrain.png");
 	long old_time = GetFileModTime(skinfile);
 	int queue_update = 0;
+
+	struct stat statbuf;
+	if (argc > 1) {
+		if (stat(argv[1], &statbuf) < 0) {
+			if (errno == ENOENT) fprintf(stderr, "File does not exist!\n");
+			else fprintf(stderr, "Could not check file %s: %s!\n", argv[1], strerror(errno));
+
+			return EXIT_FAILURE;
+		}
+
+		size_t len = strnlen(argv[1], PATH_MAX);
+		if (len >= PATH_MAX) {
+			fprintf(stderr, "Filename too long!\n");
+			return EXIT_FAILURE;
+		}
+
+		strcpy(skinfile, argv[1]);
+		skinfile[len] = '\0';
+	}
 
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 	InitWindow(400, 600, "SkinView " VERSION);
