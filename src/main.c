@@ -70,6 +70,7 @@ main(int argc, char **argv)
 		skinfile[len] = '\0';
 	}
 
+	SetTraceLogLevel(LOG_WARNING);
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 	InitWindow(400, 600, "SkinView " VERSION);
 
