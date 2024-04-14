@@ -26,16 +26,19 @@ unzip raylib-5.0_win64_mingw-w64.zip
 cp configs/mingw.mk config.mk
 make
 
-Functional Requirements
------------------------
+Features
+--------
 
-	x Display a skin using minecraft steve/alex model
-	x Drag&Drop skins
+	- Drag&Drop skins
+	- Reload on texture file change
+
+To-Do
+-----
+
 	- Toggleable limbs visibility
-	x Reload on texture file change
 
-Potential Goals
----------------
+Backlog
+-------
 
 	- Bundle assets into executable
 
