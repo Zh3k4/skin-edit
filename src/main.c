@@ -10,9 +10,49 @@
 #include "raylib.h"
 #include "rlgl.h"
 
+#include "bundle.h"
+
 #ifndef VERSION
 #	define VERSION "dev"
 #endif
+
+char *
+lft(const char *fileName)
+{
+	for (size_t i = 0; i < res_len; i += 1) {
+		if (!strcmp(fileName, resources[i].fileName)) {
+			char *res = ((char *)&bundle) + resources[i].offset;
+			size_t size = resources[i].size;
+
+			char *buf = calloc(size + 1, sizeof(*buf));
+			if (!buf) return NULL;
+			memcpy(buf, res, size);
+
+			return buf;
+		}
+	}
+	fprintf(stderr, "REACHED WHERE SHOULD NOT HAVE\n");
+	exit(1);
+}
+
+const unsigned char *
+get_bundle(char *f)
+{
+	for (size_t i = 0; i < res_len; i += 1) {
+		char *b = &((char *)bundle)[resources[i].offset];
+		if (!strcmp(f, resources[i].fileName)) return (unsigned char *)b;
+	}
+	return NULL;
+}
+
+size_t
+get_bundle_size(char *f)
+{
+	for (size_t i = 0; i < res_len; i += 1) {
+		if (!strcmp(f, resources[i].fileName)) return resources[i].size;
+	}
+	return 0;
+}
 
 int
 update_model_with_png(char const *const fp, Model *m[2], Texture2D *t)
@@ -74,9 +114,12 @@ main(int argc, char **argv)
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 	InitWindow(400, 600, "SkinView " VERSION);
 
-	Texture2D texture = LoadTexture(skinfile);
+	Image image = LoadImageFromMemory(".png", get_bundle(skinfile), get_bundle_size(skinfile));
+	Texture2D texture = LoadTextureFromImage(image);
+	SetLoadFileTextCallback(lft);
 	Model skin = LoadModel("resources/models/obj/alex_skin.obj");
 	Model layer = LoadModel("resources/models/obj/alex_layer.obj");
+	SetLoadFileTextCallback(NULL);
 	skin.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
 	layer.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
 
@@ -141,6 +184,7 @@ main(int argc, char **argv)
 	} /* End Main Loop */
 
 	UnloadTexture(texture);
+	UnloadImage(image);
 	UnloadModel(skin);
 	UnloadModel(layer);
 
