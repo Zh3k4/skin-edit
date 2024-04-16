@@ -25,7 +25,7 @@ main(void)
 	if (!bundle) return 1;
 
 	for (size_t i = 0; i < res_len; i += 1) {
-		FILE *f = fopen(res[i].fileName, "rt");
+		FILE *f = fopen(res[i].fileName, "rb");
 		if (!f) {
 			free(bundle);
 			return 2;
@@ -43,15 +43,17 @@ main(void)
 			return 3;
 		}
 		bundle = new;
+		bundle_size += size + 1;
 
 		size_t count = fread(&bundle[offset], 1, size, f);
-		/* \r\n is converted to \n on reading, so
-		   the number of read bytes is reduced */
-		if (count < size) bundle = realloc(bundle, bundle_size + count + 1);
-		bundle_size += count + 1;
+		if (count != size) {
+			fclose(f);
+			free(bundle);
+			return 4;
+		}
 
 		res[i].offset = offset;
-		offset += count + 1;
+		offset += size + 1;
 		bundle[offset - 1] = '\0';
 
 		fclose(f);
