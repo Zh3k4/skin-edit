@@ -8,9 +8,7 @@ struct Resource {
 };
 
 struct Resource res[] = {
-	{ .fileName = "resources/models/obj/alex_layer.mtl" },
 	{ .fileName = "resources/models/obj/alex_layer.obj" },
-	{ .fileName = "resources/models/obj/alex_skin.mtl" },
 	{ .fileName = "resources/models/obj/alex_skin.obj" },
 	{ .fileName = "resources/models/obj/osage-chan-lagtrain.png" },
 };
