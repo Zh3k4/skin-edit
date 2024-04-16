@@ -22,13 +22,17 @@ main(void)
 	char *bundle = malloc(bundle_size);
 	size_t offset = 0;
 
-	if (!bundle) return 1;
+	if (!bundle) {
+		perror("malloc");
+		return EXIT_FAILURE;
+	}
 
 	for (size_t i = 0; i < res_len; i += 1) {
 		FILE *f = fopen(res[i].fileName, "rb");
 		if (!f) {
+			perror("fopen");
 			free(bundle);
-			return 2;
+			return EXIT_FAILURE;
 		}
 
 		fseek(f, 0, SEEK_END);
@@ -38,18 +42,18 @@ main(void)
 
 		char *new = realloc(bundle, bundle_size + size + 1);
 		if (!new) {
-			fclose(f);
+			perror("realloc");
 			free(bundle);
-			return 3;
+			exit(EXIT_FAILURE);
 		}
 		bundle = new;
 		bundle_size += size + 1;
 
 		size_t count = fread(&bundle[offset], 1, size, f);
 		if (count != size) {
-			fclose(f);
+			fprintf(stderr, "fread() failed: %zu\n", count);
 			free(bundle);
-			return 4;
+			exit(EXIT_FAILURE);
 		}
 
 		res[i].offset = offset;
@@ -62,8 +66,9 @@ main(void)
 
 	FILE *f = fopen("src/bundle.h", "w");
 	if (!f) {
+		perror("fopen");
 		free(bundle);
-		return 5;
+		return EXIT_FAILURE;
 	}
 
 	fprintf(f, "struct Resource {\n");
@@ -104,5 +109,5 @@ main(void)
 
 	free(bundle);
 
-	return 0;
+	return EXIT_SUCCESS;
 }
