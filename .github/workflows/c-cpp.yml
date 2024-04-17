@@ -1,0 +1,23 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: make
+      run: |
+        git clone --depth 1 --branch 5.0 https://github.com/raysan5/raylib
+        cd raylib/src
+        make
+        cd ../..
+        cp configs/linux.mk config.mk
+        make
