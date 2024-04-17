@@ -31,16 +31,12 @@ Features
 
 	- Drag&Drop skins
 	- Reload on texture file change
+	- Assets are bundled into executable
 
 To-Do
 -----
 
 	- Toggleable limbs visibility
-
-Backlog
--------
-
-	- Bundle assets into executable
 
 Non Goals
 ---------
