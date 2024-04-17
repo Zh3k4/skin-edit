@@ -13,11 +13,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: make
+    - name: get raylib
       run: |
-        git clone --depth 1 --branch 5.0 https://github.com/raysan5/raylib
-        cd raylib/src
-        make
-        cd ../..
-        cp configs/linux.mk config.mk
-        make
+        curl -sSL https://github.com/raysan5/raylib/releases/download/5.0/raylib-5.0_linux_amd64.tar.gz -o raylib.tar.gz
+        tar xf raylib.tar.gz
+        rm raylib.tar.gz
+        mkdir -p raylib/src
+        mv raylib-5.0_linux_amd64/lib/* raylib-5.0_linux_amd64/include/* raylib/src/
+        rm -r raylib-5.0_linux_amd64
+    - name: configure
+      run: cp configs/linux.mk config.mk
+    - name: make
+      run: make
