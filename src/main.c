@@ -54,7 +54,7 @@ get_bundle_size(char *f)
 	return 0;
 }
 
-int
+_Bool
 update_model_with_png(char const *const fp, Model *m[2], Texture2D *t)
 {
 	if (!IsFileExtension(fp, ".png")) return 0;
@@ -66,7 +66,7 @@ update_model_with_png(char const *const fp, Model *m[2], Texture2D *t)
 	return 1;
 }
 
-int
+_Bool
 update_skin(char *dst, Model *models[2], Texture2D *texture)
 {
 	FilePathList files = LoadDroppedFiles();
