@@ -8,7 +8,7 @@ VERSION = 0.4.0
 CFLAGS = \
 	--std=c11 -pedantic \
 	-Os -Wl,s \
-	-Wall -Wextra -Werror \
+	-Wall -Wextra -Wshadow -Wconversion -Werror \
 	-D_XOPEN_SOURCE=700 \
 	-DVERSION='"$(VERSION)"'
 
