@@ -114,7 +114,8 @@ main(int argc, char **argv)
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 	InitWindow(400, 600, "SkinView " VERSION);
 
-	Image image = LoadImageFromMemory(".png", get_bundle(skinfile), get_bundle_size(skinfile));
+	Image image = LoadImageFromMemory(".png", get_bundle(skinfile),
+			(int)get_bundle_size(skinfile));
 	Texture2D texture = LoadTextureFromImage(image);
 	SetLoadFileTextCallback(lft);
 	Model skin = LoadModel("resources/models/obj/alex_skin.obj");
