@@ -36,7 +36,7 @@ main(void)
 		}
 
 		fseek(f, 0, SEEK_END);
-		size_t size = ftell(f);
+		size_t size = (size_t)ftell(f);
 		fseek(f, 0, SEEK_SET);
 		res[i].size = size;
 
