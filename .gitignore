@@ -7,6 +7,9 @@
 /src/bundle
 /src/bundle.exe
 
+/build
+/build.exe
+
 /config.mk
 
 /raylib/
