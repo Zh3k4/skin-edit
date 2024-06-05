@@ -52,7 +52,7 @@ c2o(char *ofile)
 			CC, CFLAGS, INCLUDE, "-c", cfile, "-o", ofile, NULL
 		});
 
-	free(ofile);
+	free(cfile);
 	return status;
 }
 
