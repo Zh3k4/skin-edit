@@ -50,7 +50,7 @@ typedef struct {
 
 #ifdef _WIN32
 #	if defined(__GNUC__)
-#		define CC "echo"
+#		define CC "cc"
 #	elif defined(__clang__)
 #		define CC "clang"
 #	elif defined(_MSC_VER)
