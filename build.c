@@ -72,7 +72,7 @@ build(void)
 	{
 		char *deps[] = { "src/bundle.c", NULL };
 		char *cmd[] = {
-			CC, CFLAGS, LDFLAGS, INCLUDE, "src/bundle.c", "-o", BUNDLE, NULL
+			CC, "-o", BUNDLE, "src/bundle.c", NULL
 		};
 		status = status && make("CCLD", BUNDLE, deps, cmd);
 	}
