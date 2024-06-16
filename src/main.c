@@ -19,7 +19,7 @@
 char *
 lft(const char *fileName)
 {
-	for (size_t i = 0; i < res_len; i += 1) {
+	for (size_t i = 0; i < resources_count; i += 1) {
 		if (!strcmp(fileName, resources[i].fileName)) {
 			char *res = ((char *)&bundle) + resources[i].offset;
 			size_t size = resources[i].size;
@@ -38,7 +38,7 @@ lft(const char *fileName)
 const unsigned char *
 get_bundle(char *f)
 {
-	for (size_t i = 0; i < res_len; i += 1) {
+	for (size_t i = 0; i < resources_count; i += 1) {
 		char *b = &((char *)bundle)[resources[i].offset];
 		if (!strcmp(f, resources[i].fileName)) return (unsigned char *)b;
 	}
@@ -48,7 +48,7 @@ get_bundle(char *f)
 size_t
 get_bundle_size(char *f)
 {
-	for (size_t i = 0; i < res_len; i += 1) {
+	for (size_t i = 0; i < resources_count; i += 1) {
 		if (!strcmp(f, resources[i].fileName)) return resources[i].size;
 	}
 	return 0;

@@ -7,13 +7,12 @@ struct Resource {
 	size_t size;
 };
 
-struct Resource res[] = {
+struct Resource resources[] = {
 	{ .fileName = "resources/models/obj/alex_layer.obj" },
 	{ .fileName = "resources/models/obj/alex_skin.obj" },
 	{ .fileName = "resources/models/obj/osage-chan-lagtrain.png" },
 };
-
-const size_t res_len = sizeof(res)/sizeof(res[0]);
+size_t resources_count = sizeof(resources)/sizeof(*resources);
 
 int
 main(void)
@@ -27,8 +26,8 @@ main(void)
 		return EXIT_FAILURE;
 	}
 
-	for (size_t i = 0; i < res_len; i += 1) {
-		FILE *f = fopen(res[i].fileName, "rb");
+	for (size_t i = 0; i < resources_count; i += 1) {
+		FILE *f = fopen(resources[i].fileName, "rb");
 		if (!f) {
 			perror("fopen");
 			free(bundle);
@@ -38,7 +37,7 @@ main(void)
 		fseek(f, 0, SEEK_END);
 		size_t size = (size_t)ftell(f);
 		fseek(f, 0, SEEK_SET);
-		res[i].size = size;
+		resources[i].size = size;
 
 		char *new = realloc(bundle, bundle_size + size + 1);
 		if (!new) {
@@ -56,7 +55,7 @@ main(void)
 			exit(EXIT_FAILURE);
 		}
 
-		res[i].offset = offset;
+		resources[i].offset = offset;
 		offset += size + 1;
 		bundle[offset - 1] = '\0';
 
@@ -78,12 +77,12 @@ main(void)
 	fprintf(f, "};\n");
 
 	fprintf(f, "struct Resource resources[] = {\n");
-	for (size_t i = 0; i < res_len; i += 1) {
-		struct Resource r = res[i];
 		fprintf(f, "\t{ .fileName = \"%s\", .offset = %zu, .size = %zu },\n", r.fileName, r.offset, r.size);
+	for (size_t i = 0; i < resources_count; i += 1) {
+		struct Resource r = resources[i];
 	}
 	fprintf(f, "};\n");
-	fprintf(f, "const size_t res_len = %zu;\n", res_len);
+	fprintf(f, "const size_t resources_count = %zu;\n", resources_count);
 
 	const size_t rowsz = 12;
 	fprintf(f, "unsigned char bundle[] = {\n");
