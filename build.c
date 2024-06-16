@@ -31,10 +31,10 @@ make(char *prefix, char *output, char **deps, char **cmd)
 	if (!r.ok) return 0;
 	if (!r.val) return 1;
 
+	printf("%s\t%s\n", prefix, output);
 	Proc p = create_process(cmd);
 	if (p == INVALID_PROC) return 0;
 	if (!wait_for_process(p)) return 0;
-	printf("%s\t%s\n", prefix, output);
 	return 1;
 }
 
