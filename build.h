@@ -56,6 +56,8 @@ typedef struct {
 #	elif defined(_MSC_VER)
 #		define CC "cl"
 #	endif
+#elif defined(_USE_MINGW)
+#	define CC "x86_64-w64-mingw32-cc"
 #else
 #	define CC "cc"
 #endif

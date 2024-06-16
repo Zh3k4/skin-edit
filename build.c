@@ -9,7 +9,7 @@
 #define INCLUDE "-Iraylib/src"
 #define LDFLAGS "-s"
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_USE_MINGW)
 #	define TARGET "skin-view.exe"
 #	define BUNDLE "src/bundle.exe"
 #	define LIBS "-Lraylib/src/", "-lraylib", "-lgdi32", "-lwinmm"
