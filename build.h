@@ -268,7 +268,7 @@ needs_rebuild(const char *output, const char **inputs)
 	struct stat st = {0};
 	if (stat(output, &st) < 0) {
 		if (errno == ENOENT) return (i8Result){ .ok = 1, .val = 1 };
-		fprintf(stderr, "Err: could not stat %s: %s\n", output, strerror(errno));
+		fprintf(stderr, "Err: could not stat output %s: %s\n", output, strerror(errno));
 		return (i8Result){ .ok = 0 };
 	}
 	int outtime = st.st_mtime;
@@ -276,7 +276,7 @@ needs_rebuild(const char *output, const char **inputs)
 	for (usize i = 0; inputs[i]; i += 1) {
 		const char *input = inputs[i];
 		if (stat(input, &st) < 0) {
-			fprintf(stderr, "Err: could not stat %s: %s\n", input, strerror(errno));
+			fprintf(stderr, "Err: could not stat input %s: %s\n", input, strerror(errno));
 			return (i8Result){ .ok = 0 };
 		}
 		int intime = st.st_mtime;
