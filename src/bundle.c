@@ -70,38 +70,42 @@ main(void)
 		return EXIT_FAILURE;
 	}
 
-	fprintf(f, "struct Resource {\n");
-	fprintf(f, "\tchar *fileName;\n");
-	fprintf(f, "\tsize_t offset;\n");
-	fprintf(f, "\tsize_t size;\n");
-	fprintf(f, "};\n");
+	fprintf(f,
+		"struct Resource {\n"
+		"\tchar *fileName;\n"
+		"\tsize_t offset;\n"
+		"\tsize_t size;\n"
+		"};\n");
 
 	fprintf(f, "struct Resource resources[] = {\n");
-		fprintf(f, "\t{ .fileName = \"%s\", .offset = %zu, .size = %zu },\n", r.fileName, r.offset, r.size);
 	for (size_t i = 0; i < resources_count; i += 1) {
 		struct Resource r = resources[i];
+		fprintf(f, "\t{ .fileName = \"%s\", .offset = %zu, .size = %zu },\n",
+			r.fileName, r.offset, r.size);
 	}
-	fprintf(f, "};\n");
-	fprintf(f, "const size_t resources_count = %zu;\n", resources_count);
+	fprintf(f,
+		"};\n"
+		"const size_t resources_count = %zu;\n",
+		resources_count);
 
 	const size_t rowsz = 12;
 	fprintf(f, "unsigned char bundle[] = {\n");
 
 	for (size_t row = 0; row < bundle_size/rowsz; row += 1) {
-		fprintf(f, "\t");
+		fputc('\t', f);
 		for (size_t col = 0; col < rowsz; col += 1) {
 			size_t i = row*rowsz + col;
 			fprintf(f, "0x%02X, ", (unsigned char)bundle[i]);
 		}
-		fprintf(f, "\n");
+		fputc('\n', f);
 	}
 
 	if (bundle_size%rowsz) {
-		fprintf(f, "\t");
+		fputc('\t', f);
 		for (size_t i = (bundle_size/rowsz*rowsz); i < bundle_size; i += 1) {
 			fprintf(f, "0x%02X, ", (unsigned char)bundle[i]);
 		}
-		fprintf(f, "\n");
+		fputc('\n', f);
 	}
 
 	fprintf(f, "};\n");
