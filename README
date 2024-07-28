@@ -1,30 +1,13 @@
 Skin View
 =========
 
-Builing for Linux
------------------
+Builing
+-------
 
-git clone --depth 1 --branch 5.0 https://github.com/raysan5/raylib
-cd raylib/src
-make
-cd ../..
-cp configs/linux.mk config.mk
-make
+cc -o build build.c
+./build
 
-Cross-compiling from Linux to Windows
--------------------------------------
-
-# Either build or download pre-built raylib for mingw-w64:
-
-curl -LOJ 'https://github.com/raysan5/raylib/releases/download/5.0/raylib-5.0_win64_mingw-w64.zip'
-...or...
-wget 'https://github.com/raysan5/raylib/releases/download/5.0/raylib-5.0_win64_mingw-w64.zip' -O raylib-5.0_win64_mingw-w64.zip
-
-# Build the thing:
-
-unzip raylib-5.0_win64_mingw-w64.zip
-cp configs/mingw.mk config.mk
-make
+Note: use -D_USE_MINGW to use mingw when compiling
 
 Features
 --------
