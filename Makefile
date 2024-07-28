@@ -2,7 +2,7 @@
 
 include config.mk
 
-VERSION = 0.4.0
+VERSION = 0.4.1
 
 CFLAGS = \
 	--std=c11 -pedantic \

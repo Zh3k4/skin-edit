@@ -5,7 +5,7 @@
 	"-Os", \
 	"-Wall", "-Wextra", "-Wshadow", "-Wconversion", "-Werror", \
 	"-D_XOPEN_SOURCE=700", \
-	"-DVERSION=\"0.4.0\""
+	"-DVERSION=\"0.4.1\""
 #define LDFLAGS "-s"
 
 #if defined(_WIN32) || defined(_USE_MINGW)
