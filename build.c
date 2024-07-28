@@ -33,21 +33,21 @@ const char *const obj[] = {
 	NULL,
 };
 
-i8
+bool
 make(char *prefix, char *output, char **deps, char **cmd)
 {
 	i8Result r = needs_rebuild(output, (const char**)deps);
-	if (!r.ok) return 0;
-	if (!r.val) return 1;
+	if (!r.ok) return false;
+	if (!r.v) return true;
 
 	printf("%s\t%s\n", prefix, output);
 	Proc p = create_process(cmd);
-	if (p == INVALID_PROC) return 0;
-	if (!wait_for_process(p)) return 0;
-	return 1;
+	if (p == INVALID_PROC) return false;
+	if (!wait_for_process(p)) return false;
+	return true;
 }
 
-i8
+bool
 c2o(char *ofile)
 {
 	assert(ofile);
@@ -57,7 +57,7 @@ c2o(char *ofile)
 
 	cfile[strlen(cfile) - 1] = 'c';
 
-	i8 status = make("CC", ofile, (char *[]){ cfile, NULL }, (char *[]){
+	bool status = make("CC", ofile, (char *[]){ cfile, NULL }, (char *[]){
 			CC, CFLAGS, INCLUDE, "-c", cfile, "-o", ofile, NULL
 		});
 
@@ -65,7 +65,7 @@ c2o(char *ofile)
 	return status;
 }
 
-i8
+bool
 skin_view(void)
 {
 	return make("CCLD", TARGET, (char *[]){ "src/main.o", NULL },
@@ -74,10 +74,10 @@ skin_view(void)
 		});
 }
 
-i8
+bool
 build(void)
 {
-	i8 status = 1;
+	bool status = 1;
 	{
 		char *deps[] = { "src/bundle.c", NULL };
 		char *cmd[] = {
@@ -98,25 +98,27 @@ build(void)
 	return status && skin_view();
 }
 
-i8
+bool
 remove_(const char *pathname)
 {
 	assert(pathname);
 	errno = 0;
-	if (remove(pathname) && errno != ENOENT) return 0;
-	if (errno != ENOENT) printf("RM\t%s\n", pathname);
-	return 1;
+	if (remove(pathname) && errno != ENOENT) return false;
+	return true;
 }
 
-i8
+bool
 clean(void)
 {
-	i8 status = remove_(TARGET)
-		&& remove_(BUNDLE)
-		&& remove_("src/bundle.h");
+	bool status = true;
 
-	for (usize i = 0; obj[i]; i += 1)
+	status = status && remove_(TARGET);
+	status = status && remove_(BUNDLE);
+	status = status && remove_("src/bundle.h");
+
+	for (usize i = 0; obj[i]; i += 1) {
 		status = status && remove_(obj[i]);
+	}
 
 	return status;
 }
