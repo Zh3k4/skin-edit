@@ -40,10 +40,6 @@ typedef size_t    usize;
 #define countof(a)  (sizeof(a)/sizeof(*(a)))
 #define lengthof(s) (countof(s) - 1)
 
-#define foreach(o, a) \
-	for (usize i = 0; i < countof(a); i += 1) { \
-		o = a[i];
-
 typedef struct {
 	bool ok;
 	i8 v;
