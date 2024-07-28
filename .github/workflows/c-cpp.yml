@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build-on-ubuntu:
+  linux:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -15,11 +15,12 @@ jobs:
       run: |
         cc -o build build.c
         ./build
-  build-on-windows:
+  windows:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v3
+    - uses: ilammy/msvc-dev-cmd@v1.4.1
     - name: build
       run: |
-        cc -o build build.c
+        cl -o build build.c
         ./build
