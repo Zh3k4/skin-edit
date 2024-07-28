@@ -8,9 +8,7 @@
 /src/bundle.exe
 
 /build
+/wbuild
 /build.exe
 
 /config.mk
-
-/raylib/
-/raylib-5.0_win64_mingw-w64/
