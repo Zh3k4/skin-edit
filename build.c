@@ -6,17 +6,26 @@
 	"-Wall", "-Wextra", "-Wshadow", "-Wconversion", "-Werror", \
 	"-D_XOPEN_SOURCE=700", \
 	"-DVERSION=\"0.4.0\""
-#define INCLUDE "-Iraylib/src"
 #define LDFLAGS "-s"
 
 #if defined(_WIN32) || defined(_USE_MINGW)
 #	define TARGET "skin-view.exe"
 #	define BUNDLE "src/bundle.exe"
-#	define LIBS "-Lraylib/src/", "-lraylib", "-lgdi32", "-lwinmm"
+#	if defined(_USE_MINGW)
+#		define INCLUDE "-Iraylib/x86_64-w64-mingw32/include"
+#		define LIBS "-Lraylib/x86_64-w64-mingw32/lib", \
+			"-l:libraylib.a", "-lgdi32", "-lwinmm"
+#	else
+#		define INCLUDE "-Iraylib/x86_64-w64-msvc16/include"
+#		define LIBS "-Lraylib/x86_64-w64-msvc16/lib", \
+			"-l:libraylib.a", "-lgdi32", "-lwinmm"
+#	endif
 #else
 #	define TARGET "skin-view"
 #	define BUNDLE "src/bundle"
-#	define LIBS "-Lraylib/src/", "-lraylib", "-lm"
+#	define INCLUDE "-Iraylib/x86_64-linux-gnu/include"
+#	define LIBS "-Lraylib/x86_64-linux-gnu/lib", \
+		"-l:libraylib.a", "-lm"
 #endif
 
 const char *const obj[] = {
