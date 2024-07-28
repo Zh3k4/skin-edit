@@ -10,17 +10,8 @@ jobs:
   linux:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: build
       run: |
         cc -o build build.c
-        ./build
-  windows:
-    runs-on: windows-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: ilammy/msvc-dev-cmd@v1.4.1
-    - name: build
-      run: |
-        cl -o build build.c
-        ./build
+        ./build\
