@@ -8,6 +8,7 @@
 #include <time.h>
 
 #include "raylib.h"
+#include "rcamera.h"
 #include "rlgl.h"
 
 #include "bundle.h"
@@ -157,7 +158,12 @@ main(int argc, char **argv)
 			cursor = !cursor;
 			DisableCursor();
 		}
-		UpdateCamera(&camera, CAMERA_THIRD_PERSON);
+
+		const Vector2 d = GetMouseDelta();
+		float sens = 0.05f * GetFrameTime();
+		CameraYaw(&camera, -d.x * sens, true);
+		CameraPitch(&camera, -d.y * sens, true, true, false);
+
 		if (IsKeyDown(KEY_LEFT_SHIFT)) {
 			camera.position.y -= 1.0f/16.0f;
 			camera.target.y -= 1.0f/16.0f;
