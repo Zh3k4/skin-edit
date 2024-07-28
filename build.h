@@ -47,7 +47,7 @@ typedef struct {
 
 #ifdef _WIN32
 #	if defined(__GNUC__)
-#		define CC "cc"
+#		define CC "gcc"
 #	elif defined(__clang__)
 #		define CC "clang"
 #	elif defined(_MSC_VER)
