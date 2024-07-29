@@ -13,8 +13,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: build
       run: |
-        cc -o build build.c
-        ./build
+        cc -o build build.c && ./build
         
   windows:
     runs-on: windows-latest
@@ -23,4 +22,4 @@ jobs:
     - uses: ilammy/msvc-dev-cmd@v1
     - name: build
       run: |
-        cl /out:build build.c && .\build.exe
+        cl /out:build.exe build.c && .\build.exe
