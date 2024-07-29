@@ -23,5 +23,4 @@ jobs:
     - uses: ilammy/msvc-dev-cmd@v1
     - name: build
       run: |
-        cl /out:build build.c
-        build.exe
+        cl /out:build build.c && .\build.exe
