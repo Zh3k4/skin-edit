@@ -14,4 +14,14 @@ jobs:
     - name: build
       run: |
         cc -o build build.c
-        ./build\
+        ./build
+        
+  windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ilammy/msvc-dev-cmd@v1
+    - name: build
+      run: |
+        cl /out:build build.c
+        build.exe
