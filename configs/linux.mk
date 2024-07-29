@@ -1,5 +1,5 @@
-INCLUDE = -Iraylib/x86_64-linux-gnu/include
-LIBS = -Lraylib/x86_64-linux-gnu/lib -l:libraylib.a -lm
+INCLUDE = -Iraylib/include
+LIBS = -Lraylib/lib/x86_64-linux-gnu -l:libraylib.a -lm
 
 TARGET = skin-view
 BUNDLE = src/bundle

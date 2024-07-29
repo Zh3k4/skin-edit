@@ -1,32 +1,30 @@
 #include "build.h"
 
+#if defined(_WIN32) || defined(_USE_MINGW)
+	#define TARGET "skin-view.exe"
+	#define BUNDLE "src/bundle.exe"
+	#if defined(_USE_MINGW)
+		#define LIBS "-Lraylib/lib/x86_64-w64-mingw32", \
+			"-l:libraylib.a", "-lgdi32", "-lwinmm"
+	#else
+		#define LIBS "-Lraylib/lib/x86_64-w64-msvc16", \
+			"-l:libraylib.a", "-lgdi32", "-lwinmm"
+	#endif
+#else
+	#define TARGET "skin-view"
+	#define BUNDLE "src/bundle"
+	#define LIBS "-Lraylib/lib/x86_64-linux-gnu", \
+		"-l:libraylib.a", "-lm"
+#endif
+
 #define CFLAGS \
 	"--std=c11", "-pedantic", \
 	"-Os", \
 	"-Wall", "-Wextra", "-Wshadow", "-Wconversion", "-Werror", \
 	"-D_XOPEN_SOURCE=700", \
 	"-DVERSION=\"0.4.1\""
+#define INCLUDE "-Iraylib/include"
 #define LDFLAGS "-s"
-
-#if defined(_WIN32) || defined(_USE_MINGW)
-#	define TARGET "skin-view.exe"
-#	define BUNDLE "src/bundle.exe"
-#	if defined(_USE_MINGW)
-#		define INCLUDE "-Iraylib/x86_64-w64-mingw32/include"
-#		define LIBS "-Lraylib/x86_64-w64-mingw32/lib", \
-			"-l:libraylib.a", "-lgdi32", "-lwinmm"
-#	else
-#		define INCLUDE "-Iraylib/x86_64-w64-msvc16/include"
-#		define LIBS "-Lraylib/x86_64-w64-msvc16/lib", \
-			"-l:libraylib.a", "-lgdi32", "-lwinmm"
-#	endif
-#else
-#	define TARGET "skin-view"
-#	define BUNDLE "src/bundle"
-#	define INCLUDE "-Iraylib/x86_64-linux-gnu/include"
-#	define LIBS "-Lraylib/x86_64-linux-gnu/lib", \
-		"-l:libraylib.a", "-lm"
-#endif
 
 const char *const obj[] = {
 	"src/main.o",
