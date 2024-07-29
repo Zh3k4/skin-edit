@@ -7,8 +7,8 @@
 		#define LIBS "-Lraylib/lib/x86_64-w64-mingw32", \
 			"-l:libraylib.a", "-lgdi32", "-lwinmm"
 	#else
-		#define LIBS "-Lraylib/lib/x86_64-w64-msvc16", \
-			"-l:libraylib.a", "-lgdi32", "-lwinmm"
+		#define LIBS "/link", "/LIBPATH:raylib\lib\x86_64-w64-msvc16", \
+			"raylib.lib", "gdi32.lib", "winmm.lib"
 	#endif
 #else
 	#define TARGET "skin-view"
