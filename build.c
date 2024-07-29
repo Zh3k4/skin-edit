@@ -17,12 +17,20 @@
 		"-l:libraylib.a", "-lm"
 #endif
 
-#define CFLAGS \
-	"--std=c11", "-pedantic", \
-	"-Os", \
-	"-Wall", "-Wextra", "-Wshadow", "-Wconversion", "-Werror", \
-	"-D_XOPEN_SOURCE=700", \
-	"-DVERSION=\"0.4.1\""
+#ifdef _WIN32
+	#define CFLAGS \
+		"--std=c11", "-pedantic", \
+		"-Os", \
+		"-DVERSION=\"0.4.1\""
+#else
+	#define CFLAGS \
+		"--std=c11", "-pedantic", \
+		"-Os", \
+		"-Wall", "-Wextra", "-Wshadow", "-Wconversion", "-Werror", \
+		"-D_XOPEN_SOURCE=700", \
+		"-DVERSION=\"0.4.1\""
+#endif
+
 #define INCLUDE "-Iraylib/include"
 #define LDFLAGS "-s"
 
