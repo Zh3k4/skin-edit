@@ -62,6 +62,7 @@ typedef size_t    usize;
 #	define INVALID_PROC (-1)
 #endif
 
+/* Allocates new string. Caller must free the value */
 char *
 vec2str(char *vec[])
 {
@@ -211,7 +212,7 @@ wait_for_process(Proc proc)
 #endif
 }
 
-int
+int /* ( -1:error | 0:false | 1:true ) */
 needs_rebuild(const char *output, const char **inputs)
 {
 #ifdef _WIN32
