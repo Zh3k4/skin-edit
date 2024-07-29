@@ -12,15 +12,25 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: build
-      run: |
-        cc -o build build.c && ./build
+      run: cc -o build build.c
+    - name: run
+      run: ./build
         
   windows:
     runs-on: windows-2019
     steps:
     - uses: actions/checkout@v4
-    - uses: ilammy/msvc-dev-cmd@v1
     - name: build
-      run: cl build.c /out \\build.exe
-    - name: run
-      run: \\build.exe
+      shell: cmd
+      # cl.exe isn't available as-is in Github images because they don't want
+      # to, so we need to pull env vars ourselves. Refs:
+      # https://github.com/actions/runner-images/issues/6205#issuecomment-1241573412
+      # https://learn.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-170#create-your-own-command-prompt-shortcut
+      run: |
+        call "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvars64.bat"
+        cl.exe -o build.exe build.c
+    - name: Run nob
+      shell: cmd
+      run: |
+        call "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvars64.bat"
+        build.exe
