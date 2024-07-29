@@ -55,9 +55,19 @@ c2o(char *ofile)
 
 	cfile[strlen(cfile) - 1] = 'c';
 
+#ifdef _WIN32
+	char *const outparam = calloc(5 + strlen(ofile) + 1, 1);
+	sprintf(outparam, "/out:%s", ofile);
+
+	bool status = make("CC", ofile, (char *[]){ cfile, NULL }, (char *[]){
+			CC, CFLAGS, INCLUDE, "-c", cfile, outparam, NULL
+		});
+	free(outparam);
+#else
 	bool status = make("CC", ofile, (char *[]){ cfile, NULL }, (char *[]){
 			CC, CFLAGS, INCLUDE, "-c", cfile, "-o", ofile, NULL
 		});
+#endif
 
 	free(cfile);
 	return status;
@@ -68,7 +78,11 @@ skin_view(void)
 {
 	return make("CCLD", TARGET, (char *[]){ "src/main.o", NULL },
 		(char *[]){
+#ifdef _WIN32
+			CC, LDFLAGS, "src/main.o", "/out:" TARGET, LIBS, NULL
+#else
 			CC, LDFLAGS, "src/main.o", "-o", TARGET, LIBS, NULL
+#endif
 		});
 }
 
