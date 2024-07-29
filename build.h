@@ -40,11 +40,6 @@ typedef size_t    usize;
 #define countof(a)  (sizeof(a)/sizeof(*(a)))
 #define lengthof(s) (countof(s) - 1)
 
-typedef struct {
-	bool ok;
-	i8 v;
-} i8Result;
-
 #ifdef _WIN32
 #	if defined(__GNUC__)
 #		define CC "gcc"
@@ -76,7 +71,7 @@ vec2str(char *vec[])
 		char *arg = vec[i];
 		usize len = strlen(arg);
 
-		i8 has_specials = strchr(arg, ' ') || strchr(arg, '"');
+		bool has_specials = strchr(arg, ' ') || strchr(arg, '"');
 
 		char *tmp = realloc(string,
 			(sz + len + (has_specials ? 3 : 1))*sizeof(char));
@@ -216,7 +211,7 @@ wait_for_process(Proc proc)
 #endif
 }
 
-i8Result
+int
 needs_rebuild(const char *output, const char **inputs)
 {
 #ifdef _WIN32
@@ -225,17 +220,17 @@ needs_rebuild(const char *output, const char **inputs)
 		OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
 	if (outfd == INVALID_HANDLE_VALUE) {
 		if (GetLastError() == ERROR_FILE_NOT_FOUND) {
-			return (i8Result){ .ok = true, .v = 1 };
+			return 1;
 		}
 		fprintf(stderr, "Err: could not open file %s: %lu", output, GetLastError());
-		return (i8Result){ .ok = false };
+		return -1;
 	}
 	FILETIME outtime;
 	success = GetFileTime(outfd, NULL, NULL, &outtime);
 	CloseHandle(outfd);
 	if (!success) {
 		fprintf(stderr, "Err: Could not get time of %s: %lu", output, GetLastError());
-		return (i8Result){ .ok = false };
+		return -1;
 	}
 
 	for (usize i = 0; inputs[i]; i += 1) {
@@ -244,29 +239,29 @@ needs_rebuild(const char *output, const char **inputs)
 			OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
 		if (infd == INVALID_HANDLE_VALUE) {
 			fprintf(stderr, "Err: could not open file %s: %lu", input, GetLastError());
-			return (i8Result){ .ok = false };
+			return -1;
 		}
 		FILETIME intime;
 		success = GetFileTime(infd, NULL, NULL, &intime);
 		CloseHandle(infd);
 		if (!success) {
 			fprintf(stderr, "Err: Could not get time of %s: %lu", input, GetLastError());
-			return (i8Result){ .ok = false };
+			return -1;
 		}
 
 		if (CompareFileTime(&intime, &outtime) > 0)
-			return (i8Result){ .ok = true, .v = 1 };
+			return 1;
 	}
 
-	return (i8Result){ .ok = true, .v = 0 };
+	return 0;
 
 #else
 
 	struct stat st = {0};
 	if (stat(output, &st) < 0) {
-		if (errno == ENOENT) return (i8Result){ .ok = true, .v = 1 };
+		if (errno == ENOENT) return 1;
 		fprintf(stderr, "Err: could not stat output %s: %s\n", output, strerror(errno));
-		return (i8Result){ .ok = false };
+		return -1;
 	}
 	int outtime = st.st_mtime;
 
@@ -274,13 +269,13 @@ needs_rebuild(const char *output, const char **inputs)
 		const char *input = inputs[i];
 		if (stat(input, &st) < 0) {
 			fprintf(stderr, "Err: could not stat input %s: %s\n", input, strerror(errno));
-			return (i8Result){ .ok = false };
+			return -1;
 		}
 		int intime = st.st_mtime;
-		if (intime > outtime) return (i8Result){ .ok = true, .v = 1 };
+		if (intime > outtime) return 1;
 	}
 
-	return (i8Result){ .ok = true, .v = 0 };
+	return 0;
 
 #endif
 }

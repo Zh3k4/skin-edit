@@ -36,9 +36,9 @@ const char *const obj[] = {
 bool
 make(char *prefix, char *output, char **deps, char **cmd)
 {
-	i8Result r = needs_rebuild(output, (const char**)deps);
-	if (!r.ok) return false;
-	if (!r.v) return true;
+	int r = needs_rebuild(output, (const char**)deps);
+	if (r < 0) return false;
+	if (r == 0) return true;
 
 	printf("%s\t%s\n", prefix, output);
 	Proc p = create_process(cmd);
