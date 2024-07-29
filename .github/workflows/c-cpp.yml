@@ -16,10 +16,10 @@ jobs:
         cc -o build build.c && ./build
         
   windows:
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
     - uses: actions/checkout@v4
     - uses: ilammy/msvc-dev-cmd@v1
     - name: build
       run: |
-        cl /out:build.exe build.c && .\build.exe
+        cl build.c /out:build.exe && build
