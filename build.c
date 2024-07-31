@@ -77,9 +77,14 @@ build_target(struct object o)
 	struct command c;
 	printf("CCLD\t%s\n", o.output);
 
-	c = command_init(count(libs) + 5);
-	command_append(&c, CC, 0);
+	c = command_init(count(cflags) + count(libs) + 6);
+	command_append(&c, CC, *include, 0);
+	for (usize i = 0; i < count(cflags); i++) {
+		command_append(&c, cflags[i], 0);
+	}
+	
 	command_append(&c, "-o", o.output, "src/main.c", 0);
+	
 	command_append(&c, *ldflags, 0);
 	for (usize i = 0; i < count(libs); i++) {
 		command_append(&c, libs[i], 0);
