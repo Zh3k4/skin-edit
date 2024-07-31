@@ -12,7 +12,9 @@ const char *const libs[] = {
 };
 
 const char *const include[] = { "/Iraylib/include", 0 };
-const char *const ldflags[] = { "/link", 0 };
+const char *const ldflags[] = {
+	"/link", "/SUBSYSTEM:WINDOWS", "/entry:mainCRTStartup", 0
+};
 
 #else
 
@@ -82,7 +84,9 @@ build_target(struct object o)
 
 	command_append(&c, "-o", o.output, "src/main.c", 0);
 
-	command_append(&c, *ldflags, 0);
+	for (usize i = 0; i < count(ldflags); i++) {
+		command_append(&c, ldflags[i], 0);
+	}
 	for (usize i = 0; i < count(libs); i++) {
 		command_append(&c, libs[i], 0);
 	}
