@@ -3,17 +3,16 @@
 #if defined(_WIN32) && defined(_MSC_VER)
 
 const char *const cflags[] = {
-	"/std:c11", "/Os",
-	"/Wall", 0
+	"/std:c11", "/Os", "/Wall"
 };
 const char *const libs[] = {
 	"/LIBPATH:raylib/lib/x86_64-w64-msvc",
-	"raylib.lib", "gdi32.lib", "winmm.lib", "user32.lib", "shell32.lib", 0
+	"raylib.lib", "gdi32.lib", "winmm.lib", "user32.lib", "shell32.lib"
 };
 
-const char *const include[] = { "/Iraylib/include", 0 };
+const char *const include[] = { "/Iraylib/include" };
 const char *const ldflags[] = {
-	"/link", "/SUBSYSTEM:WINDOWS", "/entry:mainCRTStartup", 0
+	"/link", "/SUBSYSTEM:WINDOWS", "/entry:mainCRTStartup"
 };
 
 #else
@@ -22,22 +21,22 @@ const char *const cflags[] = {
 	"--std=c11", "-pedantic",
 	"-Os",
 	"-Wall", "-Wextra", "-Wshadow", "-Wconversion", "-Werror",
-	"-D_XOPEN_SOURCE=700", 0
+	"-D_XOPEN_SOURCE=700"
 };
 	#if defined(__MINGW32__) || defined(_USE_MINGW)
 const char *const libs[] = {
 	"-Lraylib/lib/x86_64-w64-mingw32",
-	"-l:libraylib.a", "-lgdi32", "-lwinmm", 0
+	"-l:libraylib.a", "-lgdi32", "-lwinmm"
 };
 	#else
 const char *const libs[] = {
 	"-Lraylib/lib/x86_64-linux-gnu",
-	"-l:libraylib.a", "-lm", 0
+	"-l:libraylib.a", "-lm"
 };
 	#endif
 
-const char *const include[] = { "-Iraylib/include", 0 };
-const char *const ldflags[] = { "-s", 0 };
+const char *const include[] = { "-Iraylib/include" };
+const char *const ldflags[] = { "-s" };
 
 #endif
 
