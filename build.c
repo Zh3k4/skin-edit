@@ -1,167 +1,233 @@
 #include "build.h"
 
-#if defined(_WIN32) || defined(_USE_MINGW)
-	#define TARGET "skin-view.exe"
-	#define BUNDLE "src/bundle.exe"
-	#if defined(_USE_MINGW)
-		#define LIBS "-Lraylib/lib/x86_64-w64-mingw32", \
-			"-l:libraylib.a", "-lgdi32", "-lwinmm"
-	#else
-		#define LIBS "-Lraylib/lib/x86_64-w64-msvc16", \
-			"-l:libraylib.a", "-lgdi32", "-lwinmm"
-	#endif
+#if defined(_WIN32) && defined(_MSC_VER)
+
+const char *const cflags[] = {
+	"/std:c11", "/pedantic",
+	"/O:s",
+	"/Wall", "/Werror",
+	"/DVERSION=\"0.4.1\"", 0
+};
+const char *const libs[] = {
+	"/LIBPATH:raylib/lib/x86_64-w64-msvc16",
+	"raylib.lib", "gdi32.lib", "winmm.lib", 0
+};
+
+const char *const include[] = { "/Iraylib/include", 0 };
+const char *const ldflags[] = { "/s", 0 };
+
 #else
-	#define TARGET "skin-view"
-	#define BUNDLE "src/bundle"
-	#define LIBS "-Lraylib/lib/x86_64-linux-gnu", \
-		"-l:libraylib.a", "-lm"
+
+const char *const cflags[] = {
+	"--std=c11", "-pedantic",
+	"-Os",
+	"-Wall", "-Wextra", "-Wshadow", "-Wconversion", "-Werror",
+	"-D_XOPEN_SOURCE=700",
+	"-DVERSION=\"0.4.1\"", 0
+};
+	#if defined(__MINGW32__) || defined(_USE_MINGW)
+const char *const libs[] = {
+	"-Lraylib/lib/x86_64-w64-mingw32",
+	"-l:libraylib.a", "-lgdi32", "-lwinmm", 0
+};
+	#else
+const char *const libs[] = {
+	"-Lraylib/lib/x86_64-linux-gnu",
+	"-l:libraylib.a", "-lm", 0
+};
+	#endif
+
+const char *const include[] = { "-Iraylib/include", 0 };
+const char *const ldflags[] = { "-s", 0 };
+
 #endif
 
-#define CFLAGS \
-	"--std=c11", "-pedantic", \
-	"-Os", \
-	"-Wall", "-Wextra", "-Wshadow", "-Wconversion", "-Werror", \
-	"-D_XOPEN_SOURCE=700", \
-	"-DVERSION=\"0.4.1\""
-#define INCLUDE "-Iraylib/include"
-#define LDFLAGS "-s"
-
-const char *const obj[] = {
-	"src/main.o",
-	NULL,
+enum target {
+	T_BUNDLE,
+	T_BUNDLE_H,
+	T_OBJECT,
+	T_SKIN_VIEW,
 };
 
 bool
-make(char *prefix, char *output, char **deps, char **cmd)
+build_bundle(struct object o)
 {
-	int r = needs_rebuild(output, (const char**)deps);
-	if (r < 0) return false;
-	if (r == 0) return true;
+	struct command c;
+	printf("CCLD\t%s\n", o.output);
 
-	printf("%s\t%s\n", prefix, output);
-	Proc p = create_process(cmd);
-	if (p == INVALID_PROC) return false;
-	if (!wait_for_process(p)) return false;
-	return true;
+#ifdef _MSC_VER
+	c = command_init(3);
+	command_append(&c, CC, 0);
+	command_append(&c, temp_fmt("/out:%s", o.output), 0);
+	command_append(&c, *o.inputs, 0);
+#else
+	c = command_init(4);
+	command_append(&c, CC, 0);
+	command_append(&c, "-o", o.output, 0);
+	command_append(&c, *o.inputs, 0);
+#endif
+
+	return proc_wait(proc_run(&c));
 }
 
 bool
-c2o(char *ofile)
+build_bundle_h(struct object o)
 {
-	assert(ofile);
-
-	char *cfile = strdup(ofile);
-	assert(cfile);
-
-	cfile[strlen(cfile) - 1] = 'c';
-
-	bool status = make("CC", ofile, (char *[]){ cfile, NULL }, (char *[]){
-			CC, CFLAGS, INCLUDE, "-c", cfile, "-o", ofile, NULL
-		});
-
-	free(cfile);
-	return status;
+	printf("BUNDLE\t%s\n", o.output);
+	struct command c = command_init(1);
+	command_append(&c, *o.inputs, 0);
+	return proc_wait(proc_run(&c));
 }
 
 bool
-skin_view(void)
+build_object(struct object o)
 {
-	return make("CCLD", TARGET, (char *[]){ "src/main.o", NULL },
-		(char *[]){
-			CC, LDFLAGS, "src/main.o", "-o", TARGET, LIBS, NULL
-		});
-}
+	struct command c;
+	printf("CC\t%s\n", o.output);
 
-bool
-build(void)
-{
-	bool status = 1;
-	{
-		char *deps[] = { "src/bundle.c", NULL };
-		char *cmd[] = {
-			CC, "-o", BUNDLE, "src/bundle.c", NULL
-		};
-		status = status && make("CCLD", BUNDLE, deps, cmd);
+#ifdef _MSC_VER
+	c = command_init(count(cflags) + o.input_count + 3);
+	command_append(&c, CC, 0);
+	for (usize i = 0; i < count(cflags); i++) {
+		command_append(&c, cflags[i], 0);
 	}
-	{
-		char *deps[] = { BUNDLE, NULL };
-		char *cmd[] = { BUNDLE, NULL };
-		status = status && make("BUNDLE", "src/bundle.h", deps, cmd);
+	command_append(&c, *include, 0);
+	command_append(&c, "/c", temp_fmt("/out:%s", o.output), 0);
+	for (usize i = 0; i < o.input_count; i++) {
+		command_append(&c, o.inputs[i], 0);
 	}
-	{
-		char *deps[] = { "src/main.c", "src/bundle.h", NULL };
-		char *cmd[] = { CC, CFLAGS, INCLUDE, "-c", "src/main.c", "-o", "src/main.o", NULL };
-		status = status && make("CC", "src/main.o", deps, cmd);
+#else
+	c = command_init(count(cflags) + o.input_count + 4);
+	command_append(&c, CC, 0);
+	for (usize i = 0; i < count(cflags); i++) {
+		command_append(&c, cflags[i], 0);
 	}
-	return status && skin_view();
+	command_append(&c, *include, 0);
+	command_append(&c, "-c", "-o", o.output, 0);
+
+	char *input = string_replace_last_n_chars(o.output, ".c", 2);
+	command_append(&c, input, 0);
+#endif
+
+	return proc_wait(proc_run(&c));
 }
 
 bool
-remove_(const char *pathname)
+build_target(struct object o)
 {
-	assert(pathname);
-	errno = 0;
-	if (remove(pathname) && errno != ENOENT) return false;
-	return true;
+	struct command c;
+	printf("CCLD\t%s\n", o.output);
+
+#ifdef _MSC_VER
+	c = command_init(o.input_count + count(libs) + 3);
+	command_append(&c, CC, *ldflags, 0);
+	command_append(&c, temp_fmt("/out:%s", o.output), 0);
+	for (usize i = 0; i < o.input_count; i++) {
+		command_append(&c, o.inputs[i], 0);
+	}
+	for (usize i = 0; i < count(libs); i++) {
+		command_append(&c, libs[i], 0);
+	}
+#else
+	c = command_init(o.input_count + count(libs) + 4);
+	command_append(&c, CC, *ldflags, 0);
+	command_append(&c, "-o", o.output, 0);
+	for (usize i = 0; i < o.input_count; i++) {
+		command_append(&c, o.inputs[i], 0);
+	}
+	for (usize i = 0; i < count(libs); i++) {
+		command_append(&c, libs[i], 0);
+	}
+#endif
+
+	return proc_wait(proc_run(&c));
 }
 
 bool
-clean(void)
+build(struct object *obj, usize count)
 {
 	bool status = true;
+	for (usize i = 0; i < count; i++) {
+		struct object o = obj[i];
+		if (!object_needs_rebuild(&o)) continue;
 
-	status = status && remove_(TARGET);
-	status = status && remove_(BUNDLE);
-	status = status && remove_("src/bundle.h");
-
-	for (usize i = 0; obj[i]; i += 1) {
-		status = status && remove_(obj[i]);
+		bool result;
+		switch (o.type) {
+		case T_BUNDLE:
+			result = build_bundle(o); break;
+		case T_BUNDLE_H:
+			result = build_bundle_h(o); break;
+		case T_OBJECT:
+			result = build_object(o); break;
+		case T_SKIN_VIEW:
+			result = build_target(o); break;
+		}
+		status = status && result;
 	}
-
 	return status;
 }
 
-enum Job {
-	JOB_NONE,
-	JOB_BUILD,
-	JOB_CLEAN,
-	JOB_DIST,
-};
-
 void
-usage(int err)
+usage(bool err)
 {
 	fprintf(err ? stderr : stdout,
-		"Usage: build <build|clean|dist>\n");
+		"Usage: ./build [build|clean|help]\n");
+}
+
+void
+clean(void)
+{
+	const char *const files[] = {
+		"src/bundle",
+		"src/bundle.exe",
+		"src/bundle.h",
+		"src/main.o",
+		"skin-view",
+		"skin-view.exe",
+	};
+
+	for (usize i = 0; i < count(files); i++) {
+		remove(files[i]);
+	}
 }
 
 int
 main(int argc, char **argv)
 {
-	enum Job j = JOB_NONE;
+
+#if defined(_WIN32) || defined(_USE_MINGW)
+	#define TARGET "skin-view.exe"
+	#define BUNDLE "src/bundle.exe"
+#else
+	#define TARGET "skin-view"
+	#define BUNDLE "src/bundle"
+#endif
+
 	if (argc == 2 && !strcmp(argv[1], "help")) {
-		usage(0);
+		usage(false);
 		return 0;
 	}
-	else if (argc == 1 || (argc == 2 && !strcmp(argv[1], "build"))) {
-		j = JOB_BUILD;
-	}
 	else if (argc == 2 && !strcmp(argv[1], "clean")) {
-		j = JOB_CLEAN;
+		clean();
+		return 0;
 	}
-	else if (argc == 2 && !strcmp(argv[1], "dist")) {
-		j = JOB_DIST;
-	}
-
-	switch (j) {
-	case JOB_BUILD:
-		return !build();
-	case JOB_CLEAN:
-		return !clean();
-	case JOB_DIST: assert(0 && "not implemented");
-	default:
-		usage(1);
+	else if (!(argc == 1 || (argc == 2 && !strcmp(argv[1], "build")))) {
+		usage(true);
 		return 1;
 	}
-	return 0;
+
+	struct object obj[] = {
+		object_init(T_BUNDLE, BUNDLE,
+			(const char*[]){ "src/bundle.c", 0}),
+		object_init(T_BUNDLE_H, "src/bundle.h",
+			(const char*[]){ BUNDLE, 0}),
+		object_init(T_OBJECT, "src/main.o",
+			(const char*[]){ "src/main.c", "src/bundle.h", 0}),
+		object_init(T_SKIN_VIEW, TARGET,
+			(const char*[]){ "src/main.o", 0}),
+	};
+
+	bool status = build(obj, count(obj));
+
+	return status ? 0 : 1;
 }

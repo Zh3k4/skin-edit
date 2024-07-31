@@ -4,6 +4,8 @@
 #include <assert.h>
 #include <errno.h>
 #include <inttypes.h>
+#include <limits.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -24,21 +26,6 @@
 #	include <sys/stat.h>
 #	include <unistd.h>
 #endif
-
-typedef uint8_t   u8;
-typedef int8_t    i8;
-typedef uint16_t  u16;
-typedef int16_t   i16;
-typedef uint32_t  u32;
-typedef int32_t   i32;
-typedef uint64_t  u64;
-typedef int64_t   i64;
-typedef uintptr_t uptr;
-typedef ptrdiff_t ptrdiff;
-typedef size_t    usize;
-
-#define countof(a)  (sizeof(a)/sizeof(*(a)))
-#define lengthof(s) (countof(s) - 1)
 
 #ifdef _WIN32
 #	if defined(__GNUC__)
@@ -62,44 +49,261 @@ typedef size_t    usize;
 #	define INVALID_PROC (-1)
 #endif
 
-/* Allocates new string. Caller must free the value */
-char *
-vec2str(char *vec[])
+#ifdef _WIN32
+#	define SEP '\\'
+#else
+#	define SEP '/'
+#endif
+
+typedef uint8_t   u8;
+typedef int8_t    i8;
+typedef uint16_t  u16;
+typedef int16_t   i16;
+typedef uint32_t  u32;
+typedef int32_t   i32;
+typedef uint64_t  u64;
+typedef int64_t   i64;
+typedef uintptr_t uptr;
+typedef ptrdiff_t ptrdiff;
+typedef size_t    usize;
+
+#define size(a)  sizeof(a)
+#define count(a) (size(a)/size(*(a)))
+#define len(s)   (count(s) - 1)
+
+#ifndef TEMP_MAX
+#define TEMP_MAX 8 * 1024
+#endif
+char temporary[TEMP_MAX] = {0};
+usize temporary_count = 0;
+
+struct str {
+	usize len;
+	char *buf;
+};
+
+struct path {
+	char buf[PATH_MAX];
+	usize len;
+};
+
+struct object {
+	usize input_count;
+	int type;
+	const char *const output;
+	const char *const *const inputs;
+};
+
+struct command {
+	usize size;
+	usize len;
+	struct str *items;
+};
+
+#define str(s) (struct str){ .len = len(s), .buf = s }
+
+void *
+temp_alloc(usize size)
 {
-	char *string = malloc(1);
-	usize sz = 0, i = 0;
+	assert(size < TEMP_MAX);
+
+	if (temporary_count + size > TEMP_MAX) {
+		temporary_count = 0;
+	}
+
+	usize count = temporary_count;
+	memset(&temporary[count], 0, size);
+	temporary_count += size;
+
+	return &temporary[count];
+}
+
+char *
+temp_fmt(const char *fmt, ...) {
+	char *str;
+	usize len;
+	va_list args, args_len;
+
+	va_start(args, fmt);
+	va_copy(args_len, args);
+	len = vsnprintf(NULL, 0, fmt, args_len);
+	va_end(args_len);
+
+	/* TODO: better error handling, potentially */
+	assert(len > 0);
+
+	str = temp_alloc(len + 1);
+	vsprintf(str, fmt, args);
+	va_end(args);
+
+	return str;
+}
+
+struct command
+command_init(usize item_count)
+{
+	struct command c = {0};
+	c.len = 0;
+	c.items = temp_alloc(item_count * size(*c.items));
+	c.size = item_count;
+	return c;
+}
+
+void
+command_append(struct command *c, ...)
+{
+	const char *s;
+	va_list args;
+
+	va_start(args, c);
+	s = va_arg(args, char*);
+	if (!s) return;
+
+	while (s) {
+		struct str *item = &c->items[c->len];
+		usize z = strlen(s);
+
+		item->buf = temp_alloc(z + 1);
+		strcpy(item->buf, s);
+		item->len = z;
+
+		c->len++;
+		assert(c->len <= c->size);
+		s = va_arg(args, char*);
+	}
+
+	va_end(args);
+}
+
+char *
+command_string(struct command *c)
+{
+	usize z = 0;
+
+	z += c->items[0].len;
+	for (usize i = 1; i < c->len; i++) {
+		struct str *item = &c->items[i];
+		z += 1 + item->len;
+
+		if (strchr(item->buf, ' ')) z += 2;
+	}
+
+	char *str = temp_alloc(z + 1);
+	char *s = str;
+
+	for (usize i = 0; i < c->len; i++) {
+		struct str *item = &c->items[i];
+		if (strchr(item->buf, ' ')) {
+			*s = '"';
+			memcpy(&s[1], item->buf, item->len);
+			s[item->len + 1] = '"';
+			s = &s[item->len + 3];
+		} else {
+			memcpy(s, item->buf, item->len);
+			s = &s[item->len + 1];
+		}
+		s[-1] = ' ';
+	}
+	s[-1] = '\0';
+
+	return str;
+}
+
+char **
+command_array(struct command *c)
+{
+	usize z = 0;
+	for (usize i = 0; i < c->len; i++) {
+		z += c->items[i].len + 1;
+	}
+
+	usize array_pointers = c->len + 1;
+	char **a = temp_alloc(array_pointers * sizeof(char*) + z);
+	char *s = (char *)&a[c->len + 1];
+	for (usize i = 0; i < c->len; i++) {
+		struct str item = c->items[i];
+		strcpy(s, item.buf);
+		a[i] = s;
+		s = &s[item.len + 1];
+	}
+
+	return a;
+}
+
+char *
+string_replace_last_n_chars(const char *const s,
+		const char *const r, const usize n)
+{
+	usize l = strlen(s);
+	assert(n < l);
+	char *o = temp_alloc(l + 1);
+	memcpy(o, s, l - n);
+	memcpy(&o[l - n], r, n);
+	return o;
+}
+
+#define errorln(...) errorln0(__VA_ARGS__ __VA_OPT__(,) NULL)
+void
+errorln0(const char *const s, ...)
+{
+	if (!s) goto done;
+
+	fputs(s, stderr);
+
+	va_list args;
+	va_start(args, s);
+
+	char *a = va_arg(args, char*);
 	do {
-		char *arg = vec[i];
-		usize len = strlen(arg);
+		fputc(' ', stderr);
+		fputs(a, stderr);
+		a = va_arg(args, char*);
+	} while (a);
 
-		bool has_specials = strchr(arg, ' ') || strchr(arg, '"');
+	va_end(args);
+done:
+	fputc('\n', stderr);
+}
 
-		char *tmp = realloc(string,
-			(sz + len + (has_specials ? 3 : 1))*sizeof(char));
-		assert(tmp);
-		string = tmp;
+void
+path_append(struct path path, const struct str *const str)
+{
+	/* FIXME: should probably be a regular error */
+	assert(str->len + path.len < PATH_MAX && "resulting path is too big");
 
-		if (has_specials) {
-			string[sz] = '\'';
-			sz += 1;
-		}
-		strncpy(&string[sz], arg, len);
-		if (has_specials) {
-			string[sz + len] = '\'';
-			sz += 1;
-		}
-		string[sz + len] = ' ';
-		sz += len + 1;
+	char *last = &path.buf[path.len - 1];
+	const char *src = str->buf;
 
-		i += 1;
-	} while (vec[i]);
-	string[sz] = '\0';
+	if (*last != SEP && *str->buf != SEP) {
+		path.buf[path.len] = SEP;
+		path.len += 1;
+	} else if (*last == SEP && *str->buf == SEP) {
+		/* instead of this should just append & clean up path */
+		src = &str->buf[1];
+	}
 
-	return string;
+	char *dst = &path.buf[path.len];
+
+	strcpy(dst, src);
+	path.len += str->len;
+}
+
+struct object
+object_init(int type, const char *const output, const char *const *const inputs)
+{
+	assert(output && inputs);
+
+	usize count = 0;
+	while (inputs[count]) count++;
+
+	return (struct object){
+		.type = type, .output = output,
+		.input_count = count, .inputs = inputs,
+	};
 }
 
 Proc
-create_process(char *command[])
+proc_run(struct command *c)
 {
 #ifdef _WIN32
 
@@ -107,9 +311,10 @@ create_process(char *command[])
 	STARTUPINFO si;
 	ZeroMemory(&si, sizeof(si));
 	si.cb = sizeof(STARTUPINFO);
-	// NOTE: theoretically setting NULL to std handles should not be a problem
-	// https://docs.microsoft.com/en-us/windows/console/getstdhandle?redirectedfrom=MSDN#attachdetach-behavior
-	// TODO: check for errors in GetStdHandle
+	/* NOTE: theoretically setting NULL to std handles
+	 * should not be a problem
+	 * https://docs.microsoft.com/en-us/windows/console/getstdhandle?redirectedfrom=MSDN#attachdetach-behavior
+	 * TODO: check for errors in GetStdHandle */
 	si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
 	si.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
 	si.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
@@ -118,11 +323,10 @@ create_process(char *command[])
 	PROCESS_INFORMATION pi;
 	ZeroMemory(&pi, sizeof(pi));
 
-	char *cmd = vec2str(command);
 	/* printf("ZZZZZZZZZ --------- :%s\n", cmd); */
 	/* FIXME: does this even work on win? Cannot test on linux */
 	BOOL ok = CreateProcessA(
-		NULL, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi);
+		NULL, command_string(c), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi);
 	free(cmd);
 
 	if (!ok) {
@@ -143,7 +347,8 @@ create_process(char *command[])
 
 	if (pid > 0) return pid;
 
-	if (execvp(command[0], command) < 0) {
+	char **cmd = command_array(c);
+	if (execvp(cmd[0], cmd) < 0) {
 		fprintf(stderr, "Err: Could not exec process: %s\n", strerror(errno));
 		exit(1);
 	}
@@ -152,8 +357,8 @@ create_process(char *command[])
 #endif /* _WIN32 */
 }
 
-i8
-wait_for_process(Proc proc)
+bool
+proc_wait(Proc proc)
 {
 	if (proc == INVALID_PROC) return 0;
 
@@ -213,8 +418,10 @@ wait_for_process(Proc proc)
 }
 
 int /* ( -1:error | 0:false | 1:true ) */
-needs_rebuild(const char *output, const char **inputs)
+object_needs_rebuild(struct object *object)
 {
+	const char *const output = object->output;
+	const char *const *const inputs = object->inputs;
 #ifdef _WIN32
 	BOOL success;
 	HANDLE outfd = CreateFile(output, GENERIC_READ, 0, NULL,
