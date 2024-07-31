@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: build
-      run: cc -o build build.c
     - name: prepare
-        ./build
+      run: cc -o build build.c
+    - name: build
+      run: ./build
     - name: upload
       uses: actions/upload-artifact@v3
       with:
