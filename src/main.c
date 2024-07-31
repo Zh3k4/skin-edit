@@ -11,11 +11,13 @@
 #include "rcamera.h"
 #include "rlgl.h"
 
+#if defined(_WIN32) || !defined(PATH_MAX)
+#define PATH_MAX 255
+#endif
+
 #include "bundle.h"
 
-#ifndef VERSION
-#	define VERSION "dev"
-#endif
+#define VERSION "0.4.1"
 
 char *
 lft(const char *fileName)

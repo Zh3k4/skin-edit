@@ -172,6 +172,16 @@ command_append(struct command *c, ...)
 	va_end(args);
 }
 
+void
+command_append_vec(struct command *c,
+		const char *const *const vec, const usize l)
+{
+	assert(c && vec && l > 0);
+	for (usize i = 0; i < l; i++) {
+		command_append(c, vec[i], 0);
+	}
+}
+
 char *
 command_string(struct command *c)
 {

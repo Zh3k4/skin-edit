@@ -3,18 +3,19 @@
 #if defined(_WIN32) && defined(_MSC_VER)
 
 const char *const cflags[] = {
-	"/std:c11", "/pedantic",
-	"/O:s",
-	"/Wall", "/Werror",
-	"/DVERSION=\"0.4.1\"", 0
+	"/std:c11", "/Os", "/Wall"
 };
 const char *const libs[] = {
-	"/LIBPATH:raylib/lib/x86_64-w64-msvc16",
-	"raylib.lib", "gdi32.lib", "winmm.lib", 0
+	"/LIBPATH:raylib/lib/x86_64-w64-msvc",
+	"gdi32.lib", "kernel32.lib", "msvcrt.lib", "opengl32.lib",
+	"raylib.lib", "shell32.lib", "user32.lib", "winmm.lib"
 };
 
-const char *const include[] = { "/Iraylib/include", 0 };
-const char *const ldflags[] = { "/s", 0 };
+const char *const include[] = { "/Iraylib/include" };
+const char *const ldflags[] = {
+	"/link", "/SUBSYSTEM:WINDOWS", "/entry:mainCRTStartup",
+	"/NODEFAULTLIB:libcmt"
+};
 
 #else
 
@@ -22,30 +23,28 @@ const char *const cflags[] = {
 	"--std=c11", "-pedantic",
 	"-Os",
 	"-Wall", "-Wextra", "-Wshadow", "-Wconversion", "-Werror",
-	"-D_XOPEN_SOURCE=700",
-	"-DVERSION=\"0.4.1\"", 0
+	"-D_XOPEN_SOURCE=700"
 };
 	#if defined(__MINGW32__) || defined(_USE_MINGW)
 const char *const libs[] = {
 	"-Lraylib/lib/x86_64-w64-mingw32",
-	"-l:libraylib.a", "-lgdi32", "-lwinmm", 0
+	"-l:libraylib.a", "-lgdi32", "-lwinmm"
 };
 	#else
 const char *const libs[] = {
 	"-Lraylib/lib/x86_64-linux-gnu",
-	"-l:libraylib.a", "-lm", 0
+	"-l:libraylib.a", "-lm"
 };
 	#endif
 
-const char *const include[] = { "-Iraylib/include", 0 };
-const char *const ldflags[] = { "-s", 0 };
+const char *const include[] = { "-Iraylib/include" };
+const char *const ldflags[] = { "-s" };
 
 #endif
 
 enum target {
 	T_BUNDLE,
 	T_BUNDLE_H,
-	T_OBJECT,
 	T_SKIN_VIEW,
 };
 
@@ -55,17 +54,10 @@ build_bundle(struct object o)
 	struct command c;
 	printf("CCLD\t%s\n", o.output);
 
-#ifdef _MSC_VER
-	c = command_init(3);
-	command_append(&c, CC, 0);
-	command_append(&c, temp_fmt("/out:%s", o.output), 0);
-	command_append(&c, *o.inputs, 0);
-#else
 	c = command_init(4);
 	command_append(&c, CC, 0);
 	command_append(&c, "-o", o.output, 0);
 	command_append(&c, *o.inputs, 0);
-#endif
 
 	return proc_wait(proc_run(&c));
 }
@@ -80,65 +72,17 @@ build_bundle_h(struct object o)
 }
 
 bool
-build_object(struct object o)
-{
-	struct command c;
-	printf("CC\t%s\n", o.output);
-
-#ifdef _MSC_VER
-	c = command_init(count(cflags) + o.input_count + 3);
-	command_append(&c, CC, 0);
-	for (usize i = 0; i < count(cflags); i++) {
-		command_append(&c, cflags[i], 0);
-	}
-	command_append(&c, *include, 0);
-	command_append(&c, "/c", temp_fmt("/out:%s", o.output), 0);
-	for (usize i = 0; i < o.input_count; i++) {
-		command_append(&c, o.inputs[i], 0);
-	}
-#else
-	c = command_init(count(cflags) + o.input_count + 4);
-	command_append(&c, CC, 0);
-	for (usize i = 0; i < count(cflags); i++) {
-		command_append(&c, cflags[i], 0);
-	}
-	command_append(&c, *include, 0);
-	command_append(&c, "-c", "-o", o.output, 0);
-
-	char *input = string_replace_last_n_chars(o.output, ".c", 2);
-	command_append(&c, input, 0);
-#endif
-
-	return proc_wait(proc_run(&c));
-}
-
-bool
 build_target(struct object o)
 {
 	struct command c;
 	printf("CCLD\t%s\n", o.output);
 
-#ifdef _MSC_VER
-	c = command_init(o.input_count + count(libs) + 3);
-	command_append(&c, CC, *ldflags, 0);
-	command_append(&c, temp_fmt("/out:%s", o.output), 0);
-	for (usize i = 0; i < o.input_count; i++) {
-		command_append(&c, o.inputs[i], 0);
-	}
-	for (usize i = 0; i < count(libs); i++) {
-		command_append(&c, libs[i], 0);
-	}
-#else
-	c = command_init(o.input_count + count(libs) + 4);
-	command_append(&c, CC, *ldflags, 0);
-	command_append(&c, "-o", o.output, 0);
-	for (usize i = 0; i < o.input_count; i++) {
-		command_append(&c, o.inputs[i], 0);
-	}
-	for (usize i = 0; i < count(libs); i++) {
-		command_append(&c, libs[i], 0);
-	}
-#endif
+	c = command_init(count(cflags) + count(ldflags) + count(libs) + 5);
+	command_append(&c, CC, *include, 0);
+	command_append_vec(&c, cflags, count(cflags));
+	command_append(&c, "-o", o.output, *o.inputs, 0);
+	command_append_vec(&c, ldflags, count(ldflags));
+	command_append_vec(&c, libs, count(libs));
 
 	return proc_wait(proc_run(&c));
 }
@@ -157,8 +101,6 @@ build(struct object *obj, usize count)
 			result = build_bundle(o); break;
 		case T_BUNDLE_H:
 			result = build_bundle_h(o); break;
-		case T_OBJECT:
-			result = build_object(o); break;
 		case T_SKIN_VIEW:
 			result = build_target(o); break;
 		}
@@ -181,7 +123,6 @@ clean(void)
 		"src/bundle",
 		"src/bundle.exe",
 		"src/bundle.h",
-		"src/main.o",
 		"skin-view",
 		"skin-view.exe",
 	};
@@ -221,10 +162,8 @@ main(int argc, char **argv)
 			(const char*[]){ "src/bundle.c", 0}),
 		object_init(T_BUNDLE_H, "src/bundle.h",
 			(const char*[]){ BUNDLE, 0}),
-		object_init(T_OBJECT, "src/main.o",
-			(const char*[]){ "src/main.c", "src/bundle.h", 0}),
 		object_init(T_SKIN_VIEW, TARGET,
-			(const char*[]){ "src/main.o", 0}),
+			(const char*[]){ "src/main.c", "src/bundle.h", 0}),
 	};
 
 	bool status = build(obj, count(obj));

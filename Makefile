@@ -8,8 +8,7 @@ CFLAGS = \
 	--std=c11 -pedantic \
 	-Os \
 	-Wall -Wextra -Wshadow -Wconversion -Werror \
-	-D_XOPEN_SOURCE=700 \
-	-DVERSION='"$(VERSION)"'
+	-D_XOPEN_SOURCE=700
 LDFLAGS = -s
 
 OBJ = src/main.o
