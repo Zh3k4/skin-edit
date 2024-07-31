@@ -12,9 +12,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: build
-      run: |
-        cc -o build build.c
+      run: cc -o build build.c
+    - name: prepare
         ./build
+    - name: upload
+      uses: actions/upload-artifact@v3
+      with:
+        name: ubuntu-build-dir
+        path: skin-view
         
   windows:
     runs-on: windows-latest
@@ -34,3 +39,8 @@ jobs:
       run: |
         call "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvars64.bat"
         build.exe
+    - name: upload
+      uses: actions/upload-artifact@v3
+      with:
+        name: windows-build-dir
+        path: skin-view.exe
