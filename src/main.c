@@ -11,6 +11,10 @@
 #include "rcamera.h"
 #include "rlgl.h"
 
+#if defined(_WIN32) || !defined(PATH_MAX)
+#define PATH_MAX MAX_PATH
+#endif
+
 #include "bundle.h"
 
 #ifndef VERSION
