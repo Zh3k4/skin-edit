@@ -20,7 +20,7 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
-    - name: build
+    - name: prepare
       shell: cmd
       # cl.exe isn't available as-is in Github images because they don't want
       # to, so we need to pull env vars ourselves. Refs:
@@ -29,4 +29,8 @@ jobs:
       run: |
         call "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvars64.bat"
         cl.exe /out:build.exe build.c
-        .\build.exe
+    - name: build
+      shell: cmd
+      run: |
+        call "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Auxiliary\\Build\\vcvars64.bat"
+        build.exe
