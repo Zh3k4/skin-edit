@@ -75,7 +75,7 @@ build_target(struct object o)
 	struct command c;
 	printf("CCLD\t%s\n", o.output);
 
-	c = command_init(count(cflags) + count(libs) + 6);
+	c = command_init(count(cflags) + count(ldflags) + count(libs) + 5);
 	command_append(&c, CC, *include, 0);
 	for (usize i = 0; i < count(cflags); i++) {
 		command_append(&c, cflags[i], 0);
