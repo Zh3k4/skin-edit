@@ -81,9 +81,9 @@ build_target(struct object o)
 	for (usize i = 0; i < count(cflags); i++) {
 		command_append(&c, cflags[i], 0);
 	}
-	
+
 	command_append(&c, "-o", o.output, "src/main.c", 0);
-	
+
 	command_append(&c, *ldflags, 0);
 	for (usize i = 0; i < count(libs); i++) {
 		command_append(&c, libs[i], 0);
