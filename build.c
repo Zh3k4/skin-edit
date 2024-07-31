@@ -5,7 +5,7 @@
 const char *const cflags[] = {
 	"/std:c11", "/pedantic",
 	"/O:s",
-	"/Wall", "/Werror",
+	"/Wall",
 	"/DVERSION=\"0.4.1\"", 0
 };
 const char *const libs[] = {
@@ -14,7 +14,7 @@ const char *const libs[] = {
 };
 
 const char *const include[] = { "/Iraylib/include", 0 };
-const char *const ldflags[] = { "/s", 0 };
+const char *const ldflags[] = { "/link", 0 };
 
 #else
 
@@ -45,7 +45,6 @@ const char *const ldflags[] = { "-s", 0 };
 enum target {
 	T_BUNDLE,
 	T_BUNDLE_H,
-	T_OBJECT,
 	T_SKIN_VIEW,
 };
 
@@ -55,17 +54,10 @@ build_bundle(struct object o)
 	struct command c;
 	printf("CCLD\t%s\n", o.output);
 
-#ifdef _MSC_VER
-	c = command_init(3);
-	command_append(&c, CC, 0);
-	command_append(&c, temp_fmt("/out:%s", o.output), 0);
-	command_append(&c, *o.inputs, 0);
-#else
 	c = command_init(4);
 	command_append(&c, CC, 0);
 	command_append(&c, "-o", o.output, 0);
 	command_append(&c, *o.inputs, 0);
-#endif
 
 	return proc_wait(proc_run(&c));
 }
@@ -80,65 +72,18 @@ build_bundle_h(struct object o)
 }
 
 bool
-build_object(struct object o)
-{
-	struct command c;
-	printf("CC\t%s\n", o.output);
-
-#ifdef _MSC_VER
-	c = command_init(count(cflags) + o.input_count + 3);
-	command_append(&c, CC, 0);
-	for (usize i = 0; i < count(cflags); i++) {
-		command_append(&c, cflags[i], 0);
-	}
-	command_append(&c, *include, 0);
-	command_append(&c, "/c", temp_fmt("/out:%s", o.output), 0);
-	for (usize i = 0; i < o.input_count; i++) {
-		command_append(&c, o.inputs[i], 0);
-	}
-#else
-	c = command_init(count(cflags) + o.input_count + 4);
-	command_append(&c, CC, 0);
-	for (usize i = 0; i < count(cflags); i++) {
-		command_append(&c, cflags[i], 0);
-	}
-	command_append(&c, *include, 0);
-	command_append(&c, "-c", "-o", o.output, 0);
-
-	char *input = string_replace_last_n_chars(o.output, ".c", 2);
-	command_append(&c, input, 0);
-#endif
-
-	return proc_wait(proc_run(&c));
-}
-
-bool
 build_target(struct object o)
 {
 	struct command c;
 	printf("CCLD\t%s\n", o.output);
 
-#ifdef _MSC_VER
-	c = command_init(o.input_count + count(libs) + 3);
-	command_append(&c, CC, *ldflags, 0);
-	command_append(&c, temp_fmt("/out:%s", o.output), 0);
-	for (usize i = 0; i < o.input_count; i++) {
-		command_append(&c, o.inputs[i], 0);
-	}
+	c = command_init(count(libs) + 5);
+	command_append(&c, CC, 0);
+	command_append(&c, "-o", o.output, "src/main.c", 0);
+	command_append(&c, *ldflags, 0);
 	for (usize i = 0; i < count(libs); i++) {
 		command_append(&c, libs[i], 0);
 	}
-#else
-	c = command_init(o.input_count + count(libs) + 4);
-	command_append(&c, CC, *ldflags, 0);
-	command_append(&c, "-o", o.output, 0);
-	for (usize i = 0; i < o.input_count; i++) {
-		command_append(&c, o.inputs[i], 0);
-	}
-	for (usize i = 0; i < count(libs); i++) {
-		command_append(&c, libs[i], 0);
-	}
-#endif
 
 	return proc_wait(proc_run(&c));
 }
@@ -157,8 +102,6 @@ build(struct object *obj, usize count)
 			result = build_bundle(o); break;
 		case T_BUNDLE_H:
 			result = build_bundle_h(o); break;
-		case T_OBJECT:
-			result = build_object(o); break;
 		case T_SKIN_VIEW:
 			result = build_target(o); break;
 		}
@@ -181,7 +124,6 @@ clean(void)
 		"src/bundle",
 		"src/bundle.exe",
 		"src/bundle.h",
-		"src/main.o",
 		"skin-view",
 		"skin-view.exe",
 	};
@@ -221,10 +163,8 @@ main(int argc, char **argv)
 			(const char*[]){ "src/bundle.c", 0}),
 		object_init(T_BUNDLE_H, "src/bundle.h",
 			(const char*[]){ BUNDLE, 0}),
-		object_init(T_OBJECT, "src/main.o",
-			(const char*[]){ "src/main.c", "src/bundle.h", 0}),
 		object_init(T_SKIN_VIEW, TARGET,
-			(const char*[]){ "src/main.o", 0}),
+			(const char*[]){ "src/main.c", "src/bundle.h", 0}),
 	};
 
 	bool status = build(obj, count(obj));
