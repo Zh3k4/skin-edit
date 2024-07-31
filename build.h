@@ -44,14 +44,11 @@
 #ifdef _WIN32
 	typedef HANDLE Proc;
 #	define INVALID_PROC INVALID_HANDLE_VALUE
+#	define SEP '\\'
+#	define PATH_MAX MAX_PATH
 #else
 	typedef int Proc;
 #	define INVALID_PROC (-1)
-#endif
-
-#ifdef _WIN32
-#	define SEP '\\'
-#else
 #	define SEP '/'
 #endif
 
