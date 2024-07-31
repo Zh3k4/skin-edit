@@ -7,12 +7,14 @@ const char *const cflags[] = {
 };
 const char *const libs[] = {
 	"/LIBPATH:raylib/lib/x86_64-w64-msvc",
-	"raylib.lib", "gdi32.lib", "winmm.lib", "user32.lib", "shell32.lib"
+	"gdi32.lib", "kernel32.lib", "msvcrt.lib", "opengl32.lib",
+	"raylib.lib", "shell32.lib", "user32.lib", "winmm.lib"
 };
 
 const char *const include[] = { "/Iraylib/include" };
 const char *const ldflags[] = {
-	"/link", "/SUBSYSTEM:WINDOWS", "/entry:mainCRTStartup"
+	"/link", "/SUBSYSTEM:WINDOWS", "/entry:mainCRTStartup",
+	"/NODEFAULTLIB:libcmt"
 };
 
 #else
