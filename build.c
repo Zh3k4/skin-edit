@@ -3,10 +3,9 @@
 #if defined(_WIN32) && defined(_MSC_VER)
 
 const char *const cflags[] = {
-	"/std:c11", "/pedantic",
-	"/O:s",
+	"/std:c11", "/Os",
 	"/Wall",
-	"/DVERSION=\"0.4.1\"", 0
+	"/DVERSION=\\\"0.4.1\\\"", 0
 };
 const char *const libs[] = {
 	"/LIBPATH:raylib/lib/x86_64-w64-msvc16",
