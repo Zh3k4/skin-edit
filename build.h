@@ -324,7 +324,6 @@ proc_run(struct command *c)
 	/* FIXME: does this even work on win? Cannot test on linux */
 	BOOL ok = CreateProcessA(
 		NULL, command_string(c), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi);
-	free(cmd);
 
 	if (!ok) {
 		fprintf(stderr, "Err: Could not create child process: %lu\n", GetLastError());
