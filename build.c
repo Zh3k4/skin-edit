@@ -77,18 +77,10 @@ build_target(struct object o)
 
 	c = command_init(count(cflags) + count(ldflags) + count(libs) + 5);
 	command_append(&c, CC, *include, 0);
-	for (usize i = 0; i < count(cflags); i++) {
-		command_append(&c, cflags[i], 0);
-	}
-
-	command_append(&c, "-o", o.output, "src/main.c", 0);
-
-	for (usize i = 0; i < count(ldflags); i++) {
-		command_append(&c, ldflags[i], 0);
-	}
-	for (usize i = 0; i < count(libs); i++) {
-		command_append(&c, libs[i], 0);
-	}
+	command_append_vec(&c, cflags, count(cflags));
+	command_append(&c, "-o", o.output, *o.inputs, 0);
+	command_append_vec(&c, ldflags, count(ldflags));
+	command_append_vec(&c, libs, count(libs));
 
 	return proc_wait(proc_run(&c));
 }
