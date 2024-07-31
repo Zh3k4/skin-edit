@@ -12,7 +12,7 @@
 #include "rlgl.h"
 
 #if defined(_WIN32) || !defined(PATH_MAX)
-#define PATH_MAX MAX_PATH
+#define PATH_MAX 255
 #endif
 
 #include "bundle.h"
