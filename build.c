@@ -8,7 +8,7 @@ const char *const cflags[] = {
 };
 const char *const libs[] = {
 	"/LIBPATH:raylib/lib/x86_64-w64-msvc",
-	"raylib.lib", "gdi32.lib", "winmm.lib", "user32.lib" "shell32.lib", 0
+	"raylib.lib", "gdi32.lib", "winmm.lib", "user32.lib", "shell32.lib", 0
 };
 
 const char *const include[] = { "/Iraylib/include", 0 };
