@@ -4,8 +4,7 @@
 
 const char *const cflags[] = {
 	"/std:c11", "/Os",
-	"/Wall",
-	"/DVERSION=\\\"0.4.1\\\"", 0
+	"/Wall", 0
 };
 const char *const libs[] = {
 	"/LIBPATH:raylib/lib/x86_64-w64-msvc16",
@@ -21,8 +20,7 @@ const char *const cflags[] = {
 	"--std=c11", "-pedantic",
 	"-Os",
 	"-Wall", "-Wextra", "-Wshadow", "-Wconversion", "-Werror",
-	"-D_XOPEN_SOURCE=700",
-	"-DVERSION=\"0.4.1\"", 0
+	"-D_XOPEN_SOURCE=700", 0
 };
 	#if defined(__MINGW32__) || defined(_USE_MINGW)
 const char *const libs[] = {

@@ -17,9 +17,7 @@
 
 #include "bundle.h"
 
-#ifndef VERSION
-#	define VERSION "dev"
-#endif
+#define VERSION "0.4.1"
 
 char *
 lft(const char *fileName)
