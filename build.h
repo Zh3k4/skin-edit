@@ -290,7 +290,7 @@ remove_dir(const char *path)
 	return RemoveDirectory(path);
 #else
 	bool result = true;
-	char *buf[PATH_MAX] = {0};
+	char buf[PATH_MAX] = {0};
 
 	DIR *dir = opendir(path);
 	if (!dir) return false;
