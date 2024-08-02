@@ -63,7 +63,7 @@ main(void)
 	}
 	bundle[bundle_size - 1] = '\0';
 
-	FILE *f = fopen("src/bundle.h", "w");
+	FILE *f = fopen(".build/bundle.h", "w");
 	if (!f) {
 		perror("fopen");
 		free(bundle);

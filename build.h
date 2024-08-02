@@ -1,3 +1,10 @@
+#ifndef BUILD_H
+#define BUILD_H
+
+#if defined(WIN32) && !defined(_WIN32)
+#	define _WIN32
+#endif
+
 #ifndef _WIN32
 #	define _POSIX_C_SOURCE 200809L
 #endif
@@ -22,85 +29,45 @@
 #	include <direct.h>
 #	include <shellapi.h>
 #else
-#	include <sys/wait.h>
+#	include <dirent.h>
 #	include <sys/stat.h>
+#	include <sys/types.h>
+#	include <sys/wait.h>
 #	include <unistd.h>
-#endif
-
-#ifdef _WIN32
-#	if defined(__GNUC__)
-#		define CC "gcc"
-#	elif defined(__clang__)
-#		define CC "clang"
-#	elif defined(_MSC_VER)
-#		define CC "cl"
-#	endif
-#elif defined(_USE_MINGW)
-#	define CC "x86_64-w64-mingw32-cc"
-#else
-#	define CC "cc"
 #endif
 
 #ifdef _WIN32
 	typedef HANDLE Proc;
 #	define INVALID_PROC INVALID_HANDLE_VALUE
 #	define SEP '\\'
-#	define PATH_MAX MAX_PATH
 #else
 	typedef int Proc;
 #	define INVALID_PROC (-1)
 #	define SEP '/'
 #endif
 
-typedef uint8_t   u8;
-typedef int8_t    i8;
-typedef uint16_t  u16;
-typedef int16_t   i16;
-typedef uint32_t  u32;
-typedef int32_t   i32;
-typedef uint64_t  u64;
-typedef int64_t   i64;
-typedef uintptr_t uptr;
-typedef ptrdiff_t ptrdiff;
-typedef size_t    usize;
-
-#define size(a)  sizeof(a)
-#define count(a) (size(a)/size(*(a)))
+#define count(a) (sizeof(a)/sizeof(*(a)))
 #define len(s)   (count(s) - 1)
 
 #ifndef TEMP_MAX
 #define TEMP_MAX 8 * 1024
 #endif
 char temporary[TEMP_MAX] = {0};
-usize temporary_count = 0;
+size_t temporary_count = 0;
 
 struct str {
-	usize len;
+	size_t len;
 	char *buf;
 };
 
-struct path {
-	char buf[PATH_MAX];
-	usize len;
-};
-
-struct object {
-	usize input_count;
-	int type;
-	const char *const output;
-	const char *const *const inputs;
-};
-
 struct command {
-	usize size;
-	usize len;
+	size_t size;
+	size_t len;
 	struct str *items;
 };
 
-#define str(s) (struct str){ .len = len(s), .buf = s }
-
 void *
-temp_alloc(usize size)
+temp_alloc(size_t size)
 {
 	assert(size < TEMP_MAX);
 
@@ -108,17 +75,25 @@ temp_alloc(usize size)
 		temporary_count = 0;
 	}
 
-	usize count = temporary_count;
+	size_t count = temporary_count;
 	memset(&temporary[count], 0, size);
 	temporary_count += size;
 
 	return &temporary[count];
 }
 
+void *
+temp_realloc(void *old, size_t oldsize, size_t size)
+{
+	void *new = temp_alloc(size);
+	if (old) memcpy(new, old, oldsize);
+	return new;
+}
+
 char *
 temp_fmt(const char *fmt, ...) {
 	char *str;
-	usize len;
+	size_t len;
 	va_list args, args_len;
 
 	va_start(args, fmt);
@@ -137,11 +112,11 @@ temp_fmt(const char *fmt, ...) {
 }
 
 struct command
-command_init(usize item_count)
+command_init(size_t item_count)
 {
 	struct command c = {0};
 	c.len = 0;
-	c.items = temp_alloc(item_count * size(*c.items));
+	c.items = temp_alloc(item_count * sizeof(*c.items));
 	c.size = item_count;
 	return c;
 }
@@ -158,7 +133,7 @@ command_append(struct command *c, ...)
 
 	while (s) {
 		struct str *item = &c->items[c->len];
-		usize z = strlen(s);
+		size_t z = strlen(s);
 
 		item->buf = temp_alloc(z + 1);
 		strcpy(item->buf, s);
@@ -174,10 +149,20 @@ command_append(struct command *c, ...)
 
 void
 command_append_vec(struct command *c,
-		const char *const *const vec, const usize l)
+		const char *const *const vec, const size_t l)
 {
 	assert(c && vec && l > 0);
-	for (usize i = 0; i < l; i++) {
+	for (size_t i = 0; i < l; i++) {
+		command_append(c, vec[i], 0);
+	}
+}
+
+void
+command_append_vec0(struct command *c,
+		const char *const *const vec)
+{
+	assert(c && vec);
+	for (size_t i = 0; vec[i]; i++) {
 		command_append(c, vec[i], 0);
 	}
 }
@@ -185,10 +170,10 @@ command_append_vec(struct command *c,
 char *
 command_string(struct command *c)
 {
-	usize z = 0;
+	size_t z = 0;
 
 	z += c->items[0].len;
-	for (usize i = 1; i < c->len; i++) {
+	for (size_t i = 1; i < c->len; i++) {
 		struct str *item = &c->items[i];
 		z += 1 + item->len;
 
@@ -198,7 +183,7 @@ command_string(struct command *c)
 	char *str = temp_alloc(z + 1);
 	char *s = str;
 
-	for (usize i = 0; i < c->len; i++) {
+	for (size_t i = 0; i < c->len; i++) {
 		struct str *item = &c->items[i];
 		if (strchr(item->buf, ' ')) {
 			*s = '"';
@@ -219,15 +204,15 @@ command_string(struct command *c)
 char **
 command_array(struct command *c)
 {
-	usize z = 0;
-	for (usize i = 0; i < c->len; i++) {
+	size_t z = 0;
+	for (size_t i = 0; i < c->len; i++) {
 		z += c->items[i].len + 1;
 	}
 
-	usize array_pointers = c->len + 1;
+	size_t array_pointers = c->len + 1;
 	char **a = temp_alloc(array_pointers * sizeof(char*) + z);
 	char *s = (char *)&a[c->len + 1];
-	for (usize i = 0; i < c->len; i++) {
+	for (size_t i = 0; i < c->len; i++) {
 		struct str item = c->items[i];
 		strcpy(s, item.buf);
 		a[i] = s;
@@ -237,76 +222,195 @@ command_array(struct command *c)
 	return a;
 }
 
-char *
-string_replace_last_n_chars(const char *const s,
-		const char *const r, const usize n)
+bool
+remove_file(const char *pathname)
 {
-	usize l = strlen(s);
-	assert(n < l);
-	char *o = temp_alloc(l + 1);
-	memcpy(o, s, l - n);
-	memcpy(&o[l - n], r, n);
-	return o;
+#ifdef _WIN32
+	return DeleteFile(pathname);
+#else
+	return unlink(pathname) != -1;
+#endif
 }
 
-#define errorln(...) errorln0(__VA_ARGS__ __VA_OPT__(,) NULL)
-void
-errorln0(const char *const s, ...)
+bool
+remove_dir(const char *path)
 {
-	if (!s) goto done;
+#ifdef _WIN32
+	/* https://stackoverflow.com/questions/213392/what-is-the-win32-api-function-to-use-to-delete-a-folder */
+	/* requires linking with shell32.lib
+	size_t len = strlen(path);
+	char *dir = temp_alloc(len + 2);
+	memcpy(dir, path, len);
 
-	fputs(s, stderr);
+	SHFILEOPSTRUCT op = {
+		NULL, FO_DELETE, dir, NULL,
+		FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT,
+		false, 0, ""
+	};
 
-	va_list args;
-	va_start(args, s);
+	return !SHFileOperation(&op);
+	*/
 
-	char *a = va_arg(args, char*);
-	do {
-		fputc(' ', stderr);
-		fputs(a, stderr);
-		a = va_arg(args, char*);
-	} while (a);
+	/* https://www.codeproject.com/Articles/9089/Deleting-a-directory-along-with-sub-folders */
+	HANDLE find;
+	WIN32_FIND_DATA data;
 
-	va_end(args);
-done:
-	fputc('\n', stderr);
+	const char search[MAX_PATH] = {0};
+	char buf[MAX_PATH] = {0};
+
+	sprintf(search, "%s\\*", path);
+
+	find = FindFirstFile(search, &data);
+	if (find == INVALID_HANDLE_VALUE) return false;
+
+	for (;;) {
+		if (!FindNextFile(find, &data)) {
+			if (GetLastError() == ERROR_NO_MORE_FILES) break;
+			FindClose(find);
+			return false;
+		}
+
+		if (strcmp(data.cFileName, ".")
+				&& strcmp(data.cFileName, "..")) {
+			continue;
+		}
+
+		snprintf(buf, MAX_PATH, "%s\\%s", path, data.cFileName);
+		if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+			if (!remove_dir(buf)) {
+				FindClose(find);
+				return false;
+			}
+		} else if (!DeleteFile(buf)) {
+			FindClose(find);
+			return false;
+		}
+	}
+	FindClose(find);
+	return RemoveDirectory(path);
+#else
+	bool result = true;
+	char *buf[PATH_MAX] = {0};
+
+	size_t path_len = strlen(path);
+	DIR *dir = opendir(path);
+	if (!dir) return false;
+
+	struct dirent *p;
+	while (p = readdir(dir)) {
+		if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, "..")) {
+			continue;
+		}
+
+		size_t len = path_len + strlen(p->d_name) + 2;
+		char *buf = temp_alloc(len);
+		snprintf(buf, len, "%s/%s", path, p->d_name);
+
+		struct stat st;
+		if (stat(buf, &st)) {
+			result = false;
+			continue;
+		}
+
+		if (S_ISDIR(st.st_mode)) {
+			result = result && remove_dir(buf);
+		} else {
+			result = result && !unlink(buf);
+		}
+	}
+	closedir(dir);
+
+	if (result) result = result && !rmdir(path);
+
+	return result;
+#endif
 }
 
-void
-path_append(struct path path, const struct str *const str)
+bool
+create_dir(const char* pathname)
 {
-	/* FIXME: should probably be a regular error */
-	assert(str->len + path.len < PATH_MAX && "resulting path is too big");
+#ifdef _WIN32
+	if (CreateDirectory(pathname, NULL)
+			&& GetLastError() == ERROR_PATH_NOT_FOUND) {
+		fprintf(stderr, "Err: create_dir %s: Path Not Found\n");
+		return false;
+	}
+#else
+	if (mkdir(pathname, 0755) && errno != EEXIST) {
+		perror("mkdir");
+		return false;
+	}
+#endif
+	return true;
+}
 
-	char *last = &path.buf[path.len - 1];
-	const char *src = str->buf;
-
-	if (*last != SEP && *str->buf != SEP) {
-		path.buf[path.len] = SEP;
-		path.len += 1;
-	} else if (*last == SEP && *str->buf == SEP) {
-		/* instead of this should just append & clean up path */
-		src = &str->buf[1];
+int /* ( -1:error | 0:false | 1:true ) */
+target_needs_rebuild(const char *output, const char **inputs, size_t input_count)
+{
+#ifdef _WIN32
+	BOOL success;
+	HANDLE outfd = CreateFile(output, GENERIC_READ, 0, NULL,
+		OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
+	if (outfd == INVALID_HANDLE_VALUE) {
+		if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+			return 1;
+		}
+		fprintf(stderr, "Err: could not open file %s: %lu", output, GetLastError());
+		return -1;
+	}
+	FILETIME outtime;
+	success = GetFileTime(outfd, NULL, NULL, &outtime);
+	CloseHandle(outfd);
+	if (!success) {
+		fprintf(stderr, "Err: Could not get time of %s: %lu", output, GetLastError());
+		return -1;
 	}
 
-	char *dst = &path.buf[path.len];
+	for (size_t i = 0; i < input_count; i += 1) {
+		const char *input = inputs[i];
+		HANDLE infd = CreateFile(input, GENERIC_READ, 0, NULL,
+			OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
+		if (infd == INVALID_HANDLE_VALUE) {
+			fprintf(stderr, "Err: could not open file %s: %lu", input, GetLastError());
+			return -1;
+		}
+		FILETIME intime;
+		success = GetFileTime(infd, NULL, NULL, &intime);
+		CloseHandle(infd);
+		if (!success) {
+			fprintf(stderr, "Err: Could not get time of %s: %lu", input, GetLastError());
+			return -1;
+		}
 
-	strcpy(dst, src);
-	path.len += str->len;
-}
+		if (CompareFileTime(&intime, &outtime) > 0)
+			return 1;
+	}
 
-struct object
-object_init(int type, const char *const output, const char *const *const inputs)
-{
-	assert(output && inputs);
+	return 0;
 
-	usize count = 0;
-	while (inputs[count]) count++;
+#else
 
-	return (struct object){
-		.type = type, .output = output,
-		.input_count = count, .inputs = inputs,
-	};
+	struct stat st = {0};
+	if (stat(output, &st) < 0) {
+		if (errno == ENOENT) return 1;
+		fprintf(stderr, "Err: could not stat output %s: %s\n", output, strerror(errno));
+		return -1;
+	}
+	int outtime = st.st_mtime;
+
+	for (size_t i = 0; i < input_count; i += 1) {
+		const char *input = inputs[i];
+		if (stat(input, &st) < 0) {
+			fprintf(stderr, "Err: could not stat input %s: %s\n", input, strerror(errno));
+			return -1;
+		}
+		int intime = st.st_mtime;
+		if (intime > outtime) return 1;
+	}
+
+	return 0;
+
+#endif
 }
 
 Proc
@@ -423,73 +527,4 @@ proc_wait(Proc proc)
 #endif
 }
 
-int /* ( -1:error | 0:false | 1:true ) */
-object_needs_rebuild(struct object *object)
-{
-	const char *const output = object->output;
-	const char *const *const inputs = object->inputs;
-#ifdef _WIN32
-	BOOL success;
-	HANDLE outfd = CreateFile(output, GENERIC_READ, 0, NULL,
-		OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
-	if (outfd == INVALID_HANDLE_VALUE) {
-		if (GetLastError() == ERROR_FILE_NOT_FOUND) {
-			return 1;
-		}
-		fprintf(stderr, "Err: could not open file %s: %lu", output, GetLastError());
-		return -1;
-	}
-	FILETIME outtime;
-	success = GetFileTime(outfd, NULL, NULL, &outtime);
-	CloseHandle(outfd);
-	if (!success) {
-		fprintf(stderr, "Err: Could not get time of %s: %lu", output, GetLastError());
-		return -1;
-	}
-
-	for (usize i = 0; inputs[i]; i += 1) {
-		const char *input = inputs[i];
-		HANDLE infd = CreateFile(input, GENERIC_READ, 0, NULL,
-			OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
-		if (infd == INVALID_HANDLE_VALUE) {
-			fprintf(stderr, "Err: could not open file %s: %lu", input, GetLastError());
-			return -1;
-		}
-		FILETIME intime;
-		success = GetFileTime(infd, NULL, NULL, &intime);
-		CloseHandle(infd);
-		if (!success) {
-			fprintf(stderr, "Err: Could not get time of %s: %lu", input, GetLastError());
-			return -1;
-		}
-
-		if (CompareFileTime(&intime, &outtime) > 0)
-			return 1;
-	}
-
-	return 0;
-
-#else
-
-	struct stat st = {0};
-	if (stat(output, &st) < 0) {
-		if (errno == ENOENT) return 1;
-		fprintf(stderr, "Err: could not stat output %s: %s\n", output, strerror(errno));
-		return -1;
-	}
-	int outtime = st.st_mtime;
-
-	for (usize i = 0; inputs[i]; i += 1) {
-		const char *input = inputs[i];
-		if (stat(input, &st) < 0) {
-			fprintf(stderr, "Err: could not stat input %s: %s\n", input, strerror(errno));
-			return -1;
-		}
-		int intime = st.st_mtime;
-		if (intime > outtime) return 1;
-	}
-
-	return 0;
-
-#endif
-}
+#endif /* BUILD_H */
