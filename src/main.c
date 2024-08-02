@@ -11,7 +11,7 @@
 #include "rlgl.h"
 #include "bundle.h"
 
-#ifdef _WIN32
+#if !defined(PATH_MAX)
 #define PATH_MAX 255
 #endif
 
@@ -78,7 +78,7 @@ update_skin(char *dst, Model *models[2], Texture2D *texture)
 	return 1;
 }
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #define main WinMain
 #endif
 int
