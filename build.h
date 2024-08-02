@@ -258,7 +258,7 @@ remove_dir(const char *path)
 	const char search[MAX_PATH] = {0};
 	char buf[MAX_PATH] = {0};
 
-	sprintf(search, "%s\\*", path);
+	sprintf(search, "%s\\\*", path);
 
 	find = FindFirstFile(search, &data);
 	if (find == INVALID_HANDLE_VALUE) return false;
