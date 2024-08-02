@@ -21,16 +21,17 @@ char *
 lft(const char *fileName)
 {
 	for (size_t i = 0; i < resources_count; i += 1) {
-		if (!strcmp(fileName, resources[i].fileName)) {
-			char *res = ((char *)&bundle) + resources[i].offset;
-			size_t size = resources[i].size;
-
-			char *buf = calloc(size + 1, sizeof(*buf));
-			if (!buf) return NULL;
-			memcpy(buf, res, size);
-
-			return buf;
+		if (strcmp(fileName, resources[i].fileName)) {
+			continue;
 		}
+
+		char *res = ((char *)&bundle) + resources[i].offset;
+		size_t size = resources[i].size;
+
+		char *buf = calloc(size + 1, sizeof(*buf));
+		memcpy(buf, res, size);
+
+		return buf;
 	}
 	fprintf(stderr, "REACHED WHERE SHOULD NOT HAVE\n");
 	exit(1);
