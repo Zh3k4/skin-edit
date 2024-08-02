@@ -292,7 +292,6 @@ remove_dir(const char *path)
 	bool result = true;
 	char *buf[PATH_MAX] = {0};
 
-	size_t path_len = strlen(path);
 	DIR *dir = opendir(path);
 	if (!dir) return false;
 
@@ -302,9 +301,7 @@ remove_dir(const char *path)
 			continue;
 		}
 
-		size_t len = path_len + strlen(p->d_name) + 2;
-		char *buf = temp_alloc(len);
-		snprintf(buf, len, "%s/%s", path, p->d_name);
+		snprintf(buf, PATH_MAX, "%s/%s", path, p->d_name);
 
 		struct stat st;
 		if (stat(buf, &st)) {
