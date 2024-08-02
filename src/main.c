@@ -6,16 +6,14 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
-
 #include "raylib.h"
 #include "rcamera.h"
 #include "rlgl.h"
+#include "bundle.h"
 
 #if defined(_WIN32) || !defined(PATH_MAX)
 #define PATH_MAX 255
 #endif
-
-#include "bundle.h"
 
 #define VERSION "0.4.1"
 
