@@ -82,14 +82,6 @@ temp_alloc(size_t size)
 	return &temporary[count];
 }
 
-void *
-temp_realloc(void *old, size_t oldsize, size_t size)
-{
-	void *new = temp_alloc(size);
-	if (old) memcpy(new, old, oldsize);
-	return new;
-}
-
 char *
 temp_fmt(const char *fmt, ...) {
 	char *str;
@@ -109,6 +101,77 @@ temp_fmt(const char *fmt, ...) {
 	va_end(args);
 
 	return str;
+}
+
+const char **
+array_substitute(const char **array, const size_t len,
+		const char *pattern, const char *replacement)
+{
+	assert(array && pattern && replacement);
+
+	char *pa = strchr(pattern, '*');
+	char *re = strchr(replacement, '*');
+	assert(pa && re);
+
+	size_t pa_prefix_len = pa - pattern;
+	char *pa_prefix = temp_alloc(pa_prefix_len + 1);
+	memcpy(pa_prefix, pattern, pa_prefix_len);
+
+	size_t pa_suffix_len = strlen(pa + 1);
+	char *pa_suffix = temp_alloc(pa_suffix_len + 1);
+	memcpy(pa_suffix, &pattern[pa_prefix_len + 1], pa_suffix_len);
+
+	size_t re_prefix_len = re - replacement;
+	char *re_prefix = temp_alloc(re_prefix_len + 1);
+	memcpy(re_prefix, replacement, re_prefix_len);
+
+	size_t re_suffix_len = strlen(re + 1);
+	char *re_suffix = temp_alloc(re_suffix_len + 1);
+	memcpy(re_suffix, &replacement[re_prefix_len + 1], re_suffix_len);
+
+	size_t z = 0;
+	for (size_t i = 0; i < len; i++) {
+		size_t l = strlen(array[i]);
+		char *pre = strstr(array[i], pa_prefix);
+		if (pre != array[i]) {
+			z += l + 1;
+			continue;
+		}
+		char *suf = strstr(array[i], pa_suffix);
+		if (array[i] + l - suf != pa_suffix_len) {
+			z += l + 1;
+			continue;
+		}
+
+		size_t core_len = suf - pre - pa_prefix_len;
+		z += re_prefix_len + core_len + re_suffix_len + 1;
+	}
+
+	char **newarr = temp_alloc(len * sizeof(*newarr) + z);
+	char *data = (char *)&newarr[len];
+	for (size_t i = 0; i < len; i++) {
+		newarr[i] = data;
+
+		size_t l = strlen(array[i]);
+		char *pre = strstr(array[i], pa_prefix);
+		if (pre != array[i]) {
+			memcpy(data, array[i], l);
+			data = &data[l + 1];
+			continue;
+		}
+		char *suf = strstr(array[i], pa_suffix);
+		if (array[i] + l - suf != pa_suffix_len) {
+			memcpy(data, array[i], l);
+			data = &data[l + 1];
+			continue;
+		}
+
+		int core_len = suf - pre - pa_prefix_len;
+		sprintf(data, "%s%.*s%s",
+			re_prefix, core_len, &pre[pa_prefix_len], re_suffix);
+		data = &data[re_prefix_len + core_len + re_suffix_len + 1];
+	}
+	return (const char **)newarr;
 }
 
 struct command
@@ -236,21 +299,6 @@ bool
 remove_dir(const char *path)
 {
 #ifdef _WIN32
-	/* https://stackoverflow.com/questions/213392/what-is-the-win32-api-function-to-use-to-delete-a-folder */
-	/* requires linking with shell32.lib
-	size_t len = strlen(path);
-	char *dir = temp_alloc(len + 2);
-	memcpy(dir, path, len);
-
-	SHFILEOPSTRUCT op = {
-		NULL, FO_DELETE, dir, NULL,
-		FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT,
-		false, 0, ""
-	};
-
-	return !SHFileOperation(&op);
-	*/
-
 	/* https://www.codeproject.com/Articles/9089/Deleting-a-directory-along-with-sub-folders */
 	HANDLE find;
 	WIN32_FIND_DATA data;
