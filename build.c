@@ -20,10 +20,8 @@
 #	include "configs/windows-msvc.c"
 #elif defined(_WIN32) || defined(__MINGW32__)
 #	include "configs/windows-mingw.c"
-#elif defined(linux)
-#	include "configs/linux.c"
 #else
-#	error "Fuck you"
+#	include "configs/linux.c"
 #endif
 
 void
