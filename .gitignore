@@ -1,11 +1,8 @@
 *.o
+/.build
 
 /skin-view
 /skin-view.exe
-
-/src/bundle.h
-/src/bundle
-/src/bundle.exe
 
 /build
 /wbuild
