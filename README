@@ -7,8 +7,6 @@ Building
 cc -o build build.c
 ./build
 
-Note: use -D_USE_MINGW to use mingw when compiling on linux
-
 Features
 --------
 
