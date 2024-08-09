@@ -27,8 +27,8 @@
 void
 usage(bool err)
 {
-	fprintf(err ? stderr : stdout,
-		"Usage: ./build [build|clean|help]\n");
+	fprintln(err ? stderr : stdout,
+		"Usage: ./build [build|run|clean|help]");
 }
 
 void
@@ -42,20 +42,32 @@ clean(void)
 int
 main(int argc, char **argv)
 {
-
-	if (argc == 2 && !strcmp(argv[1], "help")) {
-		usage(false);
-		return 0;
-	}
-	else if (argc == 2 && !strcmp(argv[1], "clean")) {
-		clean();
-		return 0;
-	}
-	else if (!(argc == 1 || (argc == 2 && !strcmp(argv[1], "build")))) {
-		usage(true);
-		return 1;
+	if (argc == 1) {
+		create_dir(".build");
+		return build() ? 0 : 1;
 	}
 
-	create_dir(".build");
-	return build() ? 0 : 1;
+	for (int i = 1; i < argc; i++) {
+		if (!strcmp(argv[i], "clean")) {
+			clean();
+		}
+		else if (!strcmp(argv[i], "build")) {
+			create_dir(".build");
+			if (!build()) return 1;
+		}
+		else if (!strcmp(argv[i], "run")) {
+			create_dir(".build");
+			if (!build()) return 1;
+			if (!run()) return 1;
+		}
+		else if (!strcmp(argv[i], "help")) {
+			usage(false);
+			return 0;
+		}
+		else {
+			usage(true);
+			return 1;
+		}
+	}
+	return 0;
 }
