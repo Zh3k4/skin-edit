@@ -369,14 +369,13 @@ string_fromvec(char **vec)
 
 	scratch_clear();
 
-	char *s = vec[0];
-	bool escaping_needed = strpbrk(s, "\t\v ");
-	string_fromvec_escape(escaping_needed, s);
+	bool escaping_needed = strpbrk(vec[0], "\t\v ");
+	string_fromvec_escape(escaping_needed, vec[0]);
 
 	for (size_t i = 1; i < vec_size(vec); i++) {
-		escaping_needed = strpbrk(s, "\t\v ");
+		escaping_needed = strpbrk(vec[i], "\t\v ");
 		scratch_add_char(' ');
-		string_fromvec_escape(escaping_needed, s);
+		string_fromvec_escape(escaping_needed, vec[i]);
 	}
 	return scratch_tostring();
 }
