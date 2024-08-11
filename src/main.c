@@ -18,6 +18,24 @@
 
 #define VERSION "0.4.1"
 
+char *models_paths[] = {
+	"resources/models/obj/alex/skin/body.obj",
+	"resources/models/obj/alex/skin/head.obj",
+	"resources/models/obj/alex/skin/left_arm.obj",
+	"resources/models/obj/alex/skin/left_leg.obj",
+	"resources/models/obj/alex/skin/right_arm.obj",
+	"resources/models/obj/alex/skin/right_leg.obj",
+	"resources/models/obj/alex/layer/body.obj",
+	"resources/models/obj/alex/layer/head.obj",
+	"resources/models/obj/alex/layer/left_arm.obj",
+	"resources/models/obj/alex/layer/left_leg.obj",
+	"resources/models/obj/alex/layer/right_arm.obj",
+	"resources/models/obj/alex/layer/right_leg.obj",
+};
+enum {
+	models_count = sizeof(models_paths)/sizeof(*models_paths),
+};
+
 char *
 lft(const char *fileName)
 {
@@ -58,19 +76,20 @@ get_bundle_size(char *f)
 }
 
 bool
-update_model_with_png(char const *const fp, Model *m[2], Texture2D *t)
+update_model_with_png(char const *const fp, Model *m, Texture2D *t)
 {
 	if (!IsFileExtension(fp, ".png")) return 0;
 
 	UnloadTexture(*t);
 	*t = LoadTexture(fp);
-	m[0]->materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = *t;
-	m[1]->materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = *t;
+	for (size_t i = 0; i < models_count; i++) {
+		m[i].materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = *t;
+	}
 	return 1;
 }
 
 bool
-update_skin(char *dst, Model *models[2], Texture2D *texture)
+update_skin(char *dst, Model *models, Texture2D *texture)
 {
 	FilePathList files = LoadDroppedFiles();
 	if (!update_model_with_png(files.paths[0], models, texture)) return 0;
@@ -124,11 +143,12 @@ main(int argc, char **argv)
 			(int)get_bundle_size(skinfile));
 	Texture2D texture = LoadTextureFromImage(image);
 	SetLoadFileTextCallback(lft);
-	Model skin = LoadModel("resources/models/obj/alex_skin.obj");
-	Model layer = LoadModel("resources/models/obj/alex_layer.obj");
+	Model models[models_count] = {0};
+	for (size_t i = 0; i < models_count; i++) {
+		models[i] = LoadModel(models_paths[i]);
+		models[i].materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
+	}
 	SetLoadFileTextCallback(NULL);
-	skin.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
-	layer.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
 
 	Vector3 position = { 0.0f, 0.0f, 0.0f };
 
@@ -143,13 +163,11 @@ main(int argc, char **argv)
 
 	/* Update */
 	if (IsFileDropped()) {
-		Model *models[2] = { &skin, &layer };
 		update_skin(skinfile, models, &texture);
 		old_time = GetFileModTime(skinfile);
 	}
 
 	if (queue_update) {
-		Model *models[2] = { &skin, &layer };
 		update_model_with_png(skinfile, models, &texture);
 		old_time = GetFileModTime(skinfile);
 		queue_update = 0;
@@ -191,8 +209,9 @@ main(int argc, char **argv)
 	ClearBackground(BLACK);
 
 	BeginMode3D(camera);
-	DrawModel(skin, position, 1.0f, WHITE);
-	DrawModel(layer, position, 1.0f, WHITE);
+	for (size_t i = 0; i < models_count; i++) {
+		DrawModel(models[i], position, 1.0f, WHITE);
+	}
 	EndMode3D();
 
 	EndDrawing();
@@ -201,8 +220,9 @@ main(int argc, char **argv)
 
 	UnloadTexture(texture);
 	UnloadImage(image);
-	UnloadModel(skin);
-	UnloadModel(layer);
+	for (size_t i = 0; i < models_count; i++) {
+		UnloadModel(models[i]);
+	}
 
 	return EXIT_SUCCESS;
 }

@@ -8,8 +8,18 @@ struct Resource {
 };
 
 struct Resource resources[] = {
-	{ .fileName = "resources/models/obj/alex_layer.obj" },
-	{ .fileName = "resources/models/obj/alex_skin.obj" },
+	{ .fileName = "resources/models/obj/alex/layer/body.obj" },
+	{ .fileName = "resources/models/obj/alex/layer/head.obj" },
+	{ .fileName = "resources/models/obj/alex/layer/left_arm.obj" },
+	{ .fileName = "resources/models/obj/alex/layer/left_leg.obj" },
+	{ .fileName = "resources/models/obj/alex/layer/right_arm.obj" },
+	{ .fileName = "resources/models/obj/alex/layer/right_leg.obj" },
+	{ .fileName = "resources/models/obj/alex/skin/body.obj" },
+	{ .fileName = "resources/models/obj/alex/skin/head.obj" },
+	{ .fileName = "resources/models/obj/alex/skin/left_arm.obj" },
+	{ .fileName = "resources/models/obj/alex/skin/left_leg.obj" },
+	{ .fileName = "resources/models/obj/alex/skin/right_arm.obj" },
+	{ .fileName = "resources/models/obj/alex/skin/right_leg.obj" },
 	{ .fileName = "resources/models/obj/osage-chan-lagtrain.png" },
 };
 size_t resources_count = sizeof(resources)/sizeof(*resources);
