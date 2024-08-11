@@ -12,8 +12,8 @@
 #include "rlgl.h"
 #include "bundle.h"
 
-#if !defined(PATH_MAX)
-#define PATH_MAX 255
+#if defined(_WIN32)
+#define PATH_MAX MAX_PATH
 #endif
 
 #define VERSION "0.4.1"
