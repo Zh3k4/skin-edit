@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <limits.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,7 +57,7 @@ get_bundle_size(char *f)
 	return 0;
 }
 
-_Bool
+bool
 update_model_with_png(char const *const fp, Model *m[2], Texture2D *t)
 {
 	if (!IsFileExtension(fp, ".png")) return 0;
@@ -68,7 +69,7 @@ update_model_with_png(char const *const fp, Model *m[2], Texture2D *t)
 	return 1;
 }
 
-_Bool
+bool
 update_skin(char *dst, Model *models[2], Texture2D *texture)
 {
 	FilePathList files = LoadDroppedFiles();
@@ -131,8 +132,8 @@ main(int argc, char **argv)
 
 	Vector3 position = { 0.0f, 0.0f, 0.0f };
 
+	bool cursor = 0;
 	DisableCursor();
-	int cursor = 0;
 
 	SetTargetFPS(60);
 
