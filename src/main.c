@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdbool.h>
@@ -18,6 +19,9 @@
 
 #define VERSION "0.4.1"
 
+enum {
+	MODELS_COUNT = 12,
+};
 char *models_paths[] = {
 	"resources/models/obj/alex/skin/body.obj",
 	"resources/models/obj/alex/skin/head.obj",
@@ -32,9 +36,8 @@ char *models_paths[] = {
 	"resources/models/obj/alex/layer/right_arm.obj",
 	"resources/models/obj/alex/layer/right_leg.obj",
 };
-enum {
-	models_count = sizeof(models_paths)/sizeof(*models_paths),
-};
+static_assert(MODELS_COUNT == sizeof(models_paths)/sizeof(*models_paths),
+	"Model count is wrong");
 
 char *
 lft(const char *fileName)
@@ -82,7 +85,7 @@ update_model_with_png(char const *const fp, Model *m, Texture2D *t)
 
 	UnloadTexture(*t);
 	*t = LoadTexture(fp);
-	for (size_t i = 0; i < models_count; i++) {
+	for (size_t i = 0; i < MODELS_COUNT; i++) {
 		m[i].materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = *t;
 	}
 	return 1;
@@ -143,8 +146,8 @@ main(int argc, char **argv)
 			(int)get_bundle_size(skinfile));
 	Texture2D texture = LoadTextureFromImage(image);
 	SetLoadFileTextCallback(lft);
-	Model models[models_count] = {0};
-	for (size_t i = 0; i < models_count; i++) {
+	Model models[MODELS_COUNT] = {0};
+	for (size_t i = 0; i < MODELS_COUNT; i++) {
 		models[i] = LoadModel(models_paths[i]);
 		models[i].materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
 	}
@@ -209,7 +212,7 @@ main(int argc, char **argv)
 	ClearBackground(BLACK);
 
 	BeginMode3D(camera);
-	for (size_t i = 0; i < models_count; i++) {
+	for (size_t i = 0; i < MODELS_COUNT; i++) {
 		DrawModel(models[i], position, 1.0f, WHITE);
 	}
 	EndMode3D();
@@ -220,7 +223,7 @@ main(int argc, char **argv)
 
 	UnloadTexture(texture);
 	UnloadImage(image);
-	for (size_t i = 0; i < models_count; i++) {
+	for (size_t i = 0; i < MODELS_COUNT; i++) {
 		UnloadModel(models[i]);
 	}
 
