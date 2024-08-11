@@ -132,6 +132,7 @@ main(int argc, char **argv)
 
 	Vector3 position = { 0.0f, 0.0f, 0.0f };
 
+	int savedCursorPos[2] = { GetMouseX(), GetMouseY() };
 	bool cursor = 0;
 	DisableCursor();
 
@@ -161,6 +162,8 @@ main(int argc, char **argv)
 	if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
 		if (cursor) {
 			cursor = !cursor;
+			savedCursorPos[0] = GetMouseX();
+			savedCursorPos[1] = GetMouseY();
 			DisableCursor();
 		}
 
@@ -180,6 +183,7 @@ main(int argc, char **argv)
 	} else if (!cursor) {
 		cursor = !cursor;
 		EnableCursor();
+		SetMousePosition(savedCursorPos[0], savedCursorPos[1]);
 	}
 
 	/* Draw */
