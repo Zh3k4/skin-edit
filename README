@@ -11,13 +11,16 @@ Features
 --------
 
 	- Drag&Drop skins
+	- Toggleable limbs visibility
+
+	Technical:
 	- Reload on texture file change
 	- Assets are bundled into executable
 
 To-Do
 -----
 
-	- Toggleable limbs visibility
+	- Fix z-fighting
 
 Non Goals
 ---------
