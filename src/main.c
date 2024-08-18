@@ -19,7 +19,7 @@
 
 #define VERSION "0.4.1"
 
-enum {
+enum model {
 	MODEL_HEAD = 0,
 	MODEL_BODY,
 	MODEL_LARM,
@@ -34,6 +34,12 @@ enum {
 	MODEL_LAYER_RLEG,
 	MODEL_COUNT
 };
+
+struct button {
+	Rectangle rec;
+	bool active;
+};
+
 char *models_paths[] = {
 	[MODEL_HEAD]       = "resources/models/obj/alex/skin/head.obj",
 	[MODEL_BODY]       = "resources/models/obj/alex/skin/body.obj",
@@ -113,6 +119,83 @@ update_skin(char *dst, Model *models, Texture2D *texture)
 	return 1;
 }
 
+void
+buttons_update(struct button *button)
+{
+	const int w = GetScreenWidth();
+	const int h = GetScreenHeight();
+	const float min = (float)(w < h ? w : h);
+	const float UI_PIXEL = min * 0.01f;
+
+	button[MODEL_HEAD].rec = (Rectangle){
+		UI_PIXEL * 4, 0,
+		UI_PIXEL * 8, UI_PIXEL * 8,
+	};
+
+	button[MODEL_BODY].rec = (Rectangle){
+		UI_PIXEL * 4, UI_PIXEL * 8,
+		UI_PIXEL * 8, UI_PIXEL * 12,
+	};
+
+	button[MODEL_RARM].rec = (Rectangle){
+		0, UI_PIXEL * 8,
+		UI_PIXEL * 4, UI_PIXEL * 12,
+	};
+
+	button[MODEL_LARM].rec = (Rectangle){
+		UI_PIXEL * 12, UI_PIXEL * 8,
+		UI_PIXEL * 4, UI_PIXEL * 12,
+	};
+
+	button[MODEL_RLEG].rec = (Rectangle){
+		UI_PIXEL * 4, UI_PIXEL * 20,
+		UI_PIXEL * 4, UI_PIXEL * 12,
+	};
+
+	button[MODEL_LLEG].rec = (Rectangle){
+		UI_PIXEL * 8, UI_PIXEL * 20,
+		UI_PIXEL * 4, UI_PIXEL * 12,
+	};
+
+	const float pad = UI_PIXEL * (16 + 1);
+
+	button[MODEL_LAYER_HEAD].rec = (Rectangle){
+		pad + UI_PIXEL * 4, 0,
+		UI_PIXEL * 8, UI_PIXEL * 8,
+	};
+
+	button[MODEL_LAYER_BODY].rec = (Rectangle){
+		pad + UI_PIXEL * 4, UI_PIXEL * 8,
+		UI_PIXEL * 8, UI_PIXEL * 12,
+	};
+
+	/* position of arms/legs are swapped */
+	button[MODEL_LAYER_RARM].rec = (Rectangle){
+		pad, UI_PIXEL * 8,
+		UI_PIXEL * 4, UI_PIXEL * 12,
+	};
+
+	button[MODEL_LAYER_LARM].rec = (Rectangle){
+		pad + UI_PIXEL * 12, UI_PIXEL * 8,
+		UI_PIXEL * 4, UI_PIXEL * 12,
+	};
+
+	button[MODEL_LAYER_RLEG].rec = (Rectangle){
+		pad + UI_PIXEL * 4, UI_PIXEL * 20,
+		UI_PIXEL * 4, UI_PIXEL * 12,
+	};
+
+	button[MODEL_LAYER_LLEG].rec = (Rectangle){
+		pad + UI_PIXEL * 8, UI_PIXEL * 20,
+		UI_PIXEL * 4, UI_PIXEL * 12,
+	};
+
+	for (size_t i = 0; i < MODEL_COUNT; i++) {
+		button[i].rec.x += UI_PIXEL;
+		button[i].rec.y += (float)h - UI_PIXEL * 33;
+	}
+}
+
 #ifdef _MSC_VER
 #define main WinMain
 #endif
@@ -169,12 +252,16 @@ main(int argc, char **argv)
 
 	int savedCursorPos[2] = { GetMouseX(), GetMouseY() };
 
+	struct button button[MODEL_COUNT] = {0};
+
 	SetTargetFPS(60);
 
 	/* Main loop */
 	while (!WindowShouldClose()) {
 
 	/* Update */
+	buttons_update(button);
+
 	if (IsFileDropped()) {
 		update_skin(skinfile, models, &texture);
 		old_time = GetFileModTime(skinfile);
@@ -217,15 +304,31 @@ main(int argc, char **argv)
 		}
 	}
 
+	if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+		Vector2 pos = GetMousePosition();
+		for (size_t i = 0; i < MODEL_COUNT; i++) {
+			if (CheckCollisionPointRec(pos, button[i].rec)) {
+				button[i].active = !button[i].active;
+				break;
+			}
+		}
+	}
+
 	/* Draw */
 	BeginDrawing();
 	ClearBackground(BLACK);
 
 	BeginMode3D(camera);
 	for (size_t i = 0; i < MODEL_COUNT; i++) {
-		DrawModel(models[i], position, 1.0f, WHITE);
+		if (!button[i].active)
+			DrawModel(models[i], position, 1.0f, WHITE);
 	}
 	EndMode3D();
+
+	for (size_t i = 0; i < MODEL_COUNT; i++) {
+		DrawRectangleRec(button[i].rec,
+			(button[i].active ? DARKGRAY : WHITE));
+	}
 
 	EndDrawing();
 
