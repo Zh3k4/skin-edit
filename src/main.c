@@ -156,8 +156,6 @@ main(int argc, char **argv)
 	Vector3 position = { 0.0f, 0.0f, 0.0f };
 
 	int savedCursorPos[2] = { GetMouseX(), GetMouseY() };
-	bool cursor = 0;
-	DisableCursor();
 
 	SetTargetFPS(60);
 
@@ -180,14 +178,18 @@ main(int argc, char **argv)
 		queue_update = 1;
 	}
 
-	if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-		if (cursor) {
-			cursor = !cursor;
-			savedCursorPos[0] = GetMouseX();
-			savedCursorPos[1] = GetMouseY();
-			DisableCursor();
-		}
+	bool rmb_down = IsMouseButtonDown(MOUSE_BUTTON_RIGHT);
+	bool cur_hidden = IsCursorHidden();
+	if (rmb_down && !cur_hidden) {
+		savedCursorPos[0] = GetMouseX();
+		savedCursorPos[1] = GetMouseY();
+		DisableCursor();
+	} else if (!rmb_down && cur_hidden) {
+		EnableCursor();
+		SetMousePosition(savedCursorPos[0], savedCursorPos[1]);
+	}
 
+	if (cur_hidden) {
 		const Vector2 d = GetMouseDelta();
 		float sens = 0.05f * GetFrameTime();
 		CameraYaw(&camera, -d.x * sens, true);
@@ -201,10 +203,6 @@ main(int argc, char **argv)
 			camera.position.y += 1.0f/16.0f;
 			camera.target.y += 1.0f/16.0f;
 		}
-	} else if (!cursor) {
-		cursor = !cursor;
-		EnableCursor();
-		SetMousePosition(savedCursorPos[0], savedCursorPos[1]);
 	}
 
 	/* Draw */
