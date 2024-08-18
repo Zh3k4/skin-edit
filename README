@@ -5,7 +5,7 @@ Building
 --------
 
 cc -o build build.c
-./build
+./build run
 
 Features
 --------
