@@ -20,23 +20,35 @@
 #define VERSION "0.4.1"
 
 enum {
-	MODELS_COUNT = 12,
+	MODEL_HEAD = 0,
+	MODEL_BODY,
+	MODEL_LARM,
+	MODEL_LLEG,
+	MODEL_RARM,
+	MODEL_RLEG,
+	MODEL_LAYER_HEAD,
+	MODEL_LAYER_BODY,
+	MODEL_LAYER_LARM,
+	MODEL_LAYER_LLEG,
+	MODEL_LAYER_RARM,
+	MODEL_LAYER_RLEG,
+	MODEL_COUNT
 };
 char *models_paths[] = {
-	"resources/models/obj/alex/skin/body.obj",
-	"resources/models/obj/alex/skin/head.obj",
-	"resources/models/obj/alex/skin/left_arm.obj",
-	"resources/models/obj/alex/skin/left_leg.obj",
-	"resources/models/obj/alex/skin/right_arm.obj",
-	"resources/models/obj/alex/skin/right_leg.obj",
-	"resources/models/obj/alex/layer/body.obj",
-	"resources/models/obj/alex/layer/head.obj",
-	"resources/models/obj/alex/layer/left_arm.obj",
-	"resources/models/obj/alex/layer/left_leg.obj",
-	"resources/models/obj/alex/layer/right_arm.obj",
-	"resources/models/obj/alex/layer/right_leg.obj",
+	[MODEL_HEAD]       = "resources/models/obj/alex/skin/head.obj",
+	[MODEL_BODY]       = "resources/models/obj/alex/skin/body.obj",
+	[MODEL_LARM]       = "resources/models/obj/alex/skin/left_arm.obj",
+	[MODEL_LLEG]       = "resources/models/obj/alex/skin/left_leg.obj",
+	[MODEL_RARM]       = "resources/models/obj/alex/skin/right_arm.obj",
+	[MODEL_RLEG]       = "resources/models/obj/alex/skin/right_leg.obj",
+	[MODEL_LAYER_HEAD] = "resources/models/obj/alex/layer/head.obj",
+	[MODEL_LAYER_BODY] = "resources/models/obj/alex/layer/body.obj",
+	[MODEL_LAYER_LARM] = "resources/models/obj/alex/layer/left_arm.obj",
+	[MODEL_LAYER_LLEG] = "resources/models/obj/alex/layer/left_leg.obj",
+	[MODEL_LAYER_RARM] = "resources/models/obj/alex/layer/right_arm.obj",
+	[MODEL_LAYER_RLEG] = "resources/models/obj/alex/layer/right_leg.obj",
 };
-static_assert(MODELS_COUNT == sizeof(models_paths)/sizeof(*models_paths),
+static_assert(MODEL_COUNT == sizeof(models_paths)/sizeof(*models_paths),
 	"Model count is wrong");
 
 char *
@@ -85,7 +97,7 @@ update_model_with_png(char const *const fp, Model *m, Texture2D *t)
 
 	UnloadTexture(*t);
 	*t = LoadTexture(fp);
-	for (size_t i = 0; i < MODELS_COUNT; i++) {
+	for (size_t i = 0; i < MODEL_COUNT; i++) {
 		m[i].materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = *t;
 	}
 	return 1;
@@ -146,8 +158,8 @@ main(int argc, char **argv)
 			(int)get_bundle_size(skinfile));
 	Texture2D texture = LoadTextureFromImage(image);
 	SetLoadFileTextCallback(lft);
-	Model models[MODELS_COUNT] = {0};
-	for (size_t i = 0; i < MODELS_COUNT; i++) {
+	Model models[MODEL_COUNT] = {0};
+	for (size_t i = 0; i < MODEL_COUNT; i++) {
 		models[i] = LoadModel(models_paths[i]);
 		models[i].materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
 	}
@@ -210,7 +222,7 @@ main(int argc, char **argv)
 	ClearBackground(BLACK);
 
 	BeginMode3D(camera);
-	for (size_t i = 0; i < MODELS_COUNT; i++) {
+	for (size_t i = 0; i < MODEL_COUNT; i++) {
 		DrawModel(models[i], position, 1.0f, WHITE);
 	}
 	EndMode3D();
@@ -221,7 +233,7 @@ main(int argc, char **argv)
 
 	UnloadTexture(texture);
 	UnloadImage(image);
-	for (size_t i = 0; i < MODELS_COUNT; i++) {
+	for (size_t i = 0; i < MODEL_COUNT; i++) {
 		UnloadModel(models[i]);
 	}
 
