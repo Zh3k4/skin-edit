@@ -8,7 +8,7 @@ build_bundle(void)
 	printf("CCLD\t%s\n", o);
 	char **c = NULL;
 	arena_save();
-	vec_add_many(&c, CC, "Fo.build\\", "/Fe:", o, s, 0);
+	vec_add_many(&c, CC, "Fo\".build\\\"", "/Fe:", o, s, 0);
 	bool result = proc_wait(proc_run(c));
 	arena_load();
 
@@ -50,7 +50,7 @@ build_target(void)
 	vec_add_many(&c, "/D_WINSOCK_DEPRECATED_NO_WARNINGS", 0);
 	vec_add_many(&c, "/D_CRT_SECURE_NO_WARNINGS", 0);
 	vec_add_many(&c, "/Iraylib\\include", "/I.build", 0);
-	vec_add_many(&c, "Fo.build\\", "/Fe:", o, s, 0);
+	vec_add_many(&c, "Fo\".build\\\"", "/Fe:", o, s, 0);
 
 	vec_add_many(&c, "/link", "/NODEFAULTLIB:libcmt", 0);
 	vec_add_many(&c, "/SUBSYSTEM:WINDOWS", 0);
