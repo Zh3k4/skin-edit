@@ -14,7 +14,7 @@
 #include "bundle.h"
 
 #if defined(_WIN32)
-#define PATH_MAX MAX_PATH
+#define PATH_MAX 255
 #endif
 
 #define VERSION "0.5.0"
