@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include "raylib.h"
+#include "raymath.h"
 #include "rcamera.h"
 #include "rlgl.h"
 #include "bundle.h"
@@ -302,6 +303,12 @@ main(int argc, char **argv)
 			camera.position.y += 1.0f/16.0f;
 			camera.target.y += 1.0f/16.0f;
 		}
+		float zoom = GetMouseWheelMoveV().y * 0.5f;
+		float distance = Vector3Distance(camera.position, camera.target);
+		distance += zoom;
+
+		if (distance > 0.5f && distance < 5)
+			CameraMoveToTarget(&camera, zoom);
 	}
 
 	if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
