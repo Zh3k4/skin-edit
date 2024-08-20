@@ -18,7 +18,7 @@
 #define PATH_MAX 255
 #endif
 
-#define VERSION "0.5.0"
+#define VERSION "0.6.0"
 
 enum model {
 	MODEL_HEAD = 0,
