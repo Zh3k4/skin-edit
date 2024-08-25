@@ -14,7 +14,7 @@
 #include "rlgl.h"
 #include "bundle.h"
 
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(PATH_MAX)
 #define PATH_MAX 255
 #endif
 
