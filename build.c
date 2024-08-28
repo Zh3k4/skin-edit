@@ -25,10 +25,9 @@
 #endif
 
 void
-usage(bool err)
+usage(void)
 {
-	fprintln(err ? stderr : stdout,
-		"Usage: ./build [build|run|clean|help]");
+	xfprintf(stderr, "Usage: ./build [build|run|clean|help]\n");
 }
 
 void
@@ -61,11 +60,11 @@ main(int argc, char **argv)
 			if (!run()) return 1;
 		}
 		else if (!strcmp(argv[i], "help")) {
-			usage(false);
+			usage();
 			return 0;
 		}
 		else {
-			usage(true);
+			usage();
 			return 1;
 		}
 	}
