@@ -48,9 +48,6 @@
 #	define SEP '/'
 #endif
 
-#define count(a) (sizeof(a)/sizeof(*(a)))
-#define len(s)   (count(s) - 1)
-
 #ifndef SCRATCH_SIZE
 #define SCRATCH_SIZE 0x2000
 #endif
@@ -70,33 +67,51 @@ struct arena {
 	char *buf;
 } arena = { .size = ARENA_SIZE, .buf = arena_buffer };
 
-/*
- * TODO: provide multiple targets in args (./build clean all)
- * TODO: args parser
- */
-
 struct vheader {
 	size_t size;
 	size_t capacity;
 	char buf[];
 };
 
-void
-arena_save()
+void *
+xcalloc(size_t n, size_t s)
 {
-	arena.save = arena.count;
-}
-
-void
-arena_load()
-{
-	arena.count = arena.save;
+	void *p = calloc(n, s);
+	if (!p && s) {
+		abort();
+	}
+	return p;
 }
 
 void *
-arena_end(void)
+xrealloc(void *p, size_t s)
 {
-	return &arena.buf[arena.count];
+	p = realloc(p, s);
+	if (!p && s) {
+		abort();
+	}
+	return p;
+}
+
+int
+xvfprintf(FILE *restrict f, const char *restrict fmt, va_list ap)
+{
+	int n = vfprintf(f, fmt, ap);
+	if (f != stderr && n < 0) {
+		perror("fprintf");
+		exit(255);
+	}
+	return n;
+}
+
+int
+xfprintf(FILE *restrict f, const char *restrict fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	int n = xvfprintf(f, fmt, ap);
+	va_end(ap);
+	return n;
 }
 
 void *
@@ -106,11 +121,11 @@ arena_realloc(void *p, size_t size)
 
 	size_t fatsize = size + sizeof(size_t);
 	while (arena.count + fatsize > arena.size) {
-		arena.buf = realloc(arena.buf, arena.size * 2);
 		arena.size *= 2;
+		arena.buf = xrealloc(arena.buf, arena.size);
 	}
 
-	size_t *fatpointer = arena_end();
+	size_t *fatpointer = (size_t*)&arena.buf[arena.count];
 	void *pointer = fatpointer + 1;
 	memset(fatpointer, 0, fatsize);
 	*fatpointer = size;
@@ -139,94 +154,13 @@ arena_strndup(const char *str, const size_t len)
 }
 
 void
-vfprintln(FILE *restrict stream, const char *restrict format, va_list ap)
-{
-	arena_save();
-
-	size_t len = strlen(format);
-	char *newline = arena_alloc(len + 2);
-	memcpy(newline, format, len);
-	newline[len] = '\n';
-	vfprintf(stream, newline, ap);
-
-	arena_load();
-}
-
-void
-fprintln(FILE *restrict stream, const char *restrict format, ...)
-{
-	va_list ap;
-	va_start(ap, format);
-	vfprintln(stream, format, ap);
-	va_end(ap);
-}
-
-void
-println(const char *restrict format, ...)
-{
-	va_list ap;
-	va_start(ap, format);
-	vfprintln(stdout, format, ap);
-	va_end(ap);
-}
-
-void
-errorln(const char *restrict format, ...)
-{
-	va_list ap;
-	va_start(ap, format);
-	vfprintln(stderr, format, ap);
-	va_end(ap);
-}
-
-void
-fatalln(const char *restrict format, ...)
-{
-	va_list ap;
-	va_start(ap, format);
-	vfprintln(stderr, format, ap);
-	va_end(ap);
-	abort();
-}
-
-void
-errorf(const char *restrict format, ...)
-{
-	va_list ap;
-	va_start(ap, format);
-	vfprintf(stderr, format, ap);
-	va_end(ap);
-}
-
-void
-fatalf(const char *restrict format, ...)
-{
-	va_list ap;
-	va_start(ap, format);
-	vfprintf(stderr, format, ap);
-	va_end(ap);
-	abort();
-}
-
-void
-scratch_clear(void)
-{
-	scratch.len = 0;
-}
-
-char *
-scratch_end(void)
-{
-	return &scratch.buf[scratch.len];
-}
-
-void
 scratch_add_char(const char ch)
 {
 	if (scratch.len + 1 > SCRATCH_SIZE - 1) {
-		fatalln("Scratch buffer size (%d) exceeded", SCRATCH_SIZE - 1);
+		xfprintf(stderr, "Scratch buffer size (%d) exceeded\n", SCRATCH_SIZE - 1);
+		abort();
 	}
-	char *s = scratch_end();
+	char *s = &scratch.buf[scratch.len];
 	*s = ch;
 	scratch.len++;
 }
@@ -235,9 +169,10 @@ void
 scratch_add_str_len(const char *restrict str, const size_t len)
 {
 	if (len + scratch.len > SCRATCH_SIZE - 1) {
-		fatalln("Scratch buffer size (%d) exceeded", SCRATCH_SIZE - 1);
+		xfprintf(stderr, "Scratch buffer size (%d) exceeded\n", SCRATCH_SIZE - 1);
+		abort();
 	}
-	memcpy(scratch_end(), str, len);
+	memcpy(&scratch.buf[scratch.len], str, len);
 	scratch.len += len;
 }
 
@@ -257,7 +192,8 @@ scratch_add_fmt(const char *fmt, ...)
 	size_t needed = (size_t)vsnprintf(
 		&scratch.buf[scratch.len], available, fmt, args);
 	if (needed > available - 1) {
-		fatalln("Scratch buffer size (%d) exceeded", SCRATCH_SIZE - 1);
+		xfprintf(stderr, "Scratch buffer size (%d) exceeded\n", SCRATCH_SIZE - 1);
+		abort();
 	}
 	va_end(args);
 	scratch.len += needed;
@@ -271,62 +207,56 @@ scratch_tostring(void)
 }
 
 static struct vheader *
-vec_header(void *vec)
-{
-	return ((struct vheader*)vec) - 1;
-}
-
-static struct vheader *
-vec_create(size_t element_size, size_t capacity)
+vec_create(size_t capacity)
 {
 	assert(capacity < SIZE_MAX);
-	assert(capacity < SIZE_MAX / 100);
 	struct vheader *header =
-		arena_alloc(sizeof(*header) + element_size * capacity);
+		arena_alloc(sizeof(*header) + sizeof(char*) * capacity);
 	header->capacity = capacity;
 	return header;
 }
 
 size_t
-vec_size(const void *vec)
+vec_size(char **vec)
 {
 	if (!vec) return 0;
 	const struct vheader *header = ((struct vheader*)vec) - 1;
 	return header->size;
 }
 
-static void *
-vec_expand(char **vec, size_t element_size)
+static char **
+vec_expand(char **vec)
 {
 	struct vheader *header;
-	if (!vec) {
-		header = vec_create(element_size, 16);
-	} else {
+
+	if (vec) {
 		header = ((struct vheader*)vec) - 1;
+	} else {
+		header = vec_create(8);
 	}
 
 	if (header->size == header->capacity) {
 		struct vheader *newvec =
-			vec_create(element_size, header->capacity << 1U);
-		size_t z = element_size * header->capacity + sizeof(*header);
+			vec_create(header->capacity << 1U);
+		size_t z = sizeof(char*) * header->size + sizeof(*header);
 		memcpy(newvec, header, z);
 		newvec->capacity = header->capacity << 1U;
 	}
 	header->size++;
-	return &(header[1]);
+	return (char **)&(header[1]);
 }
 
 void
 vec_add(char ***vec, char *value)
 {
-	void *t = vec_expand(*vec, sizeof(*vec));
-	*vec = t;
+	*vec = vec_expand(*vec);
 	(*vec)[vec_size(*vec) - 1] = value;
 }
 
 void
 vec_add_vec(char ***vec, char **vec2)
 {
+	assert(vec2);
 	struct vheader *head2 = ((struct vheader*)vec2) - 1;
 	for (size_t i = 0; i < head2->size; i++) {
 		vec_add(vec, vec2[i]);
@@ -336,6 +266,7 @@ vec_add_vec(char ***vec, char **vec2)
 void
 vec_add_many(char ***vec, ...)
 {
+	assert(vec);
 	char *s;
 	va_list args;
 
@@ -349,6 +280,17 @@ vec_add_many(char ***vec, ...)
 	}
 
 	va_end(args);
+}
+
+/* Check if vec is null-terminated. If not, add empty pointer. */
+char **
+vec_array(char ***vec)
+{
+	assert(vec);
+	if ((*vec)[vec_size(*vec) - 1] != NULL) {
+		vec_add(vec, NULL);
+	}
+	return *vec;
 }
 
 static void
@@ -369,7 +311,7 @@ string_fromvec(char **vec)
 {
 	assert(vec);
 
-	scratch_clear();
+	scratch.len = 0;
 
 	bool escaping_needed = strpbrk(vec[0], "\t\v ");
 	string_fromvec_escape(escaping_needed, vec[0]);
@@ -382,28 +324,17 @@ string_fromvec(char **vec)
 	return scratch_tostring();
 }
 
-/* Check if vec is null-terminated. If not, add empty pointer. */
-char **
-vec_array(void *p)
-{
-	char **vec = *((char***)p);
-	if (vec[vec_size(vec) -1] != NULL) {
-		vec_add(p, NULL);
-	}
-	return vec;
-}
-
 const char **
 string_substitute_vec(char **vec, const char *pattern, const char *replacement)
 {
 	assert(vec && pattern && replacement);
-	struct vheader *head = vec_header(vec);
+	struct vheader *head = (struct vheader*)vec - 1;
 
 	char *pa = strchr(pattern, '*');
 	char *re = strchr(replacement, '*');
 	assert(pa && re);
 
-	scratch_clear();
+	scratch.len = 0;
 
 	size_t pa_prefix_len = (size_t)(pa - pattern);
 	char *pa_prefix = arena_strndup(pattern, pa_prefix_len);
@@ -432,7 +363,7 @@ string_substitute_vec(char **vec, const char *pattern, const char *replacement)
 
 		size_t core_len = (size_t)(suf - pre) - pa_prefix_len;
 
-		scratch_clear();
+		scratch.len = 0;
 		scratch_add_str_len(re_prefix, re_prefix_len);
 		scratch_add_str_len(&pre[pa_prefix_len], core_len);
 		scratch_add_str_len(re_suffix, re_suffix_len);
@@ -444,7 +375,7 @@ string_substitute_vec(char **vec, const char *pattern, const char *replacement)
 bool
 remove_file(const char *pathname)
 {
-#ifdef _WIN32
+#if PLATFORM_WINDOWS
 	return DeleteFile(pathname);
 #else
 	return unlink(pathname) != -1;
@@ -454,7 +385,7 @@ remove_file(const char *pathname)
 bool
 remove_dir(const char *path)
 {
-#ifdef _WIN32
+#if PLATFORM_WINDOWS
 	/* https://www.codeproject.com/Articles/9089/Deleting-a-directory-along-with-sub-folders */
 	HANDLE find;
 	WIN32_FIND_DATA data;
@@ -530,10 +461,10 @@ remove_dir(const char *path)
 bool
 create_dir(const char* pathname)
 {
-#ifdef _WIN32
+#if PLATFORM_WINDOWS
 	if (CreateDirectory(pathname, NULL)
 			&& GetLastError() == ERROR_PATH_NOT_FOUND) {
-		errorln("Err: create_dir %s: Path Not Found");
+		xfprintf(stderr, "Err: create_dir %s: Path Not Found\n");
 		return false;
 	}
 #else
@@ -548,7 +479,7 @@ create_dir(const char* pathname)
 int /* ( -1:error | 0:false | 1:true ) */
 target_needs_rebuild(const char *output, const char **inputs, size_t input_count)
 {
-#ifdef _WIN32
+#if PLATFORM_WINDOWS
 	BOOL success;
 	HANDLE outfd = CreateFile(output, GENERIC_READ, 0, NULL,
 		OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
@@ -556,7 +487,7 @@ target_needs_rebuild(const char *output, const char **inputs, size_t input_count
 		if (GetLastError() == ERROR_FILE_NOT_FOUND) {
 			return 1;
 		}
-		errorln("Err: could not open file %s: %lu",
+		xfprintf(stderr, "Err: could not open file %s: %lu\n",
 			output, GetLastError());
 		return -1;
 	}
@@ -564,7 +495,7 @@ target_needs_rebuild(const char *output, const char **inputs, size_t input_count
 	success = GetFileTime(outfd, NULL, NULL, &outtime);
 	CloseHandle(outfd);
 	if (!success) {
-		errorln("Err: Could not get time of %s: %lu",
+		xfprintf(stderr, "Err: Could not get time of %s: %lu\n",
 			output, GetLastError());
 		return -1;
 	}
@@ -574,7 +505,7 @@ target_needs_rebuild(const char *output, const char **inputs, size_t input_count
 		HANDLE infd = CreateFile(input, GENERIC_READ, 0, NULL,
 			OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
 		if (infd == INVALID_HANDLE_VALUE) {
-			errorln("Err: could not open file %s: %lu",
+			xfprintf(stderr, "Err: could not open file %s: %lu\n",
 				input, GetLastError());
 			return -1;
 		}
@@ -582,7 +513,7 @@ target_needs_rebuild(const char *output, const char **inputs, size_t input_count
 		success = GetFileTime(infd, NULL, NULL, &intime);
 		CloseHandle(infd);
 		if (!success) {
-			errorln("Err: Could not get time of %s: %lu",
+			xprintf(stderr, "Err: Could not get time of %s: %lu\n",
 				input, GetLastError());
 			return -1;
 		}
@@ -598,7 +529,7 @@ target_needs_rebuild(const char *output, const char **inputs, size_t input_count
 	struct stat st = {0};
 	if (stat(output, &st) < 0) {
 		if (errno == ENOENT) return 1;
-		errorln("Err: could not stat output %s: %s",
+		xfprintf(stderr, "Err: could not stat output %s: %s\n",
 			output, strerror(errno));
 		return -1;
 	}
@@ -607,7 +538,7 @@ target_needs_rebuild(const char *output, const char **inputs, size_t input_count
 	for (size_t i = 0; i < input_count; i += 1) {
 		const char *input = inputs[i];
 		if (stat(input, &st) < 0) {
-			errorln("Err: could not stat input %s: %s",
+			xfprintf(stderr, "Err: could not stat input %s: %s\n",
 				input, strerror(errno));
 			return -1;
 		}
@@ -623,7 +554,8 @@ target_needs_rebuild(const char *output, const char **inputs, size_t input_count
 Proc
 proc_run(char **vec)
 {
-#ifdef _WIN32
+	assert(vec);
+#if PLATFORM_WINDOWS
 
 	/* https://docs.microsoft.com/en-us/windows/win32/procthread/creating-a-child-process-with-redirected-input-and-output */
 	STARTUPINFO si;
@@ -647,7 +579,7 @@ proc_run(char **vec)
 		NULL, string_fromvec(vec), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi);
 
 	if (!ok) {
-		errorln("Err: Could not create child process: %lu",
+		xfprintf(stderr, "Err: Could not create child process: %lu\n",
 			GetLastError());
 		return INVALID_PROC;
 	}
@@ -659,7 +591,7 @@ proc_run(char **vec)
 
 	pid_t pid = fork();
 	if (pid < 0) {
-		errorln("Err: Could not fork process: %s", strerror(errno));
+		xfprintf(stderr, "Err: Could not fork process: %s\n", strerror(errno));
 		return INVALID_PROC;
 	}
 
@@ -667,12 +599,13 @@ proc_run(char **vec)
 
 	char **cmd = vec_array(&vec);
 	if (execvp(cmd[0], cmd) < 0) {
-		errorln("Err: Could not exec process: %s", strerror(errno));
+		xfprintf(stderr, "Err: Could not exec process: %s\n", strerror(errno));
 		exit(1);
 	}
 
-	assert(0 && "unreachable");
-#endif /* _WIN32 */
+	assert(0); // Unreachable
+
+#endif /* PLATFORM_WINDOWS */
 }
 
 bool
@@ -680,23 +613,23 @@ proc_wait(Proc proc)
 {
 	if (proc == INVALID_PROC) return 0;
 
-#ifdef _WIN32
+#if PLATFORM_WINDOWS
 
 	DWORD result = WaitForSingleObject(proc, INFINITE);
 	if (result == WAIT_FAILED) {
-		errorln("Err: could not wait on process: %lu", GetLastError());
+		xfprintf(stderr, "Err: could not wait on process: %lu\n", GetLastError());
 		return 0;
 	}
 
 	DWORD exit_status;
 	if (!GetExitCodeProcess(proc, &exit_status)) {
-		errorln("Err: could not get process exit code: %lu",
+		xfprintf(stderr, "Err: could not get process exit code: %lu\n",
 			GetLastError());
 		return 0;
 	}
 
 	if (exit_status != 0) {
-		errorln("Err: command exited with exit code %lu",
+		xfprintf(stderr, "Err: command exited with exit code %lu\n",
 			exit_status);
 		return 0;
 	}
@@ -709,7 +642,7 @@ proc_wait(Proc proc)
 	for (;;) {
 		int wstatus = 0;
 		if (waitpid(proc, &wstatus, 0) < 0) {
-			errorln("Err: could not wait on command (pid %d): %s",
+			xfprintf(stderr, "Err: could not wait on command (pid %d): %s\n",
 				proc, strerror(errno));
 			return 0;
 		}
@@ -717,7 +650,7 @@ proc_wait(Proc proc)
 		if (WIFEXITED(wstatus)) {
 			int exit_status = WEXITSTATUS(wstatus);
 			if (exit_status != 0) {
-				errorln("Err: command exited with exit code %d",
+				xfprintf(stderr, "Err: command exited with exit code %d\n",
 					exit_status);
 				return 0;
 			}
@@ -725,7 +658,7 @@ proc_wait(Proc proc)
 		}
 
 		if (WIFSIGNALED(wstatus)) {
-			errorln("Err: command was terminated by %s",
+			xfprintf(stderr, "Err: command was terminated by %s\n",
 				strsignal(WTERMSIG(wstatus)));
 			return 0;
 		}
