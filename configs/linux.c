@@ -7,10 +7,10 @@ build_bundle(void)
 
 	xfprintf(stdout, "CCLD\t%s\n", o);
 	char **c = NULL;
-	arena_save();
+	size_t save = arena.count;
 	vec_add_many(&c, CC, "-o", o, s, 0);
 	bool result = proc_wait(proc_run(c));
-	arena_load();
+	arena.count = save;
 
 	return result;
 }
@@ -24,10 +24,10 @@ build_bundle_h(void)
 
 	xfprintf(stdout, "BUNDLE\t%s\n", o);
 	char **c = NULL;
-	arena_save();
+	size_t save = arena.count;
 	vec_add(&c, (char*)s);
 	bool result = proc_wait(proc_run(c));
-	arena_load();
+	arena.count = save;
 
 	return result;
 }
@@ -42,7 +42,7 @@ build_target(void)
 	xfprintf(stdout, "CCLD\t%s\n", o);
 	char **c = NULL;
 
-	arena_save();
+	size_t save = arena.count;
 	vec_add_many(&c, CC, "--std=c11", "-pedantic", "-Os", 0);
 	vec_add_many(&c, "-Wall", "-Wextra", "-Wshadow", 0);
 	vec_add_many(&c, "-Wconversion", "-Werror", 0);
@@ -53,7 +53,7 @@ build_target(void)
 	vec_add_many(&c, "-l:libraylib.a", "-lm", 0);
 
 	bool result = proc_wait(proc_run(c));
-	arena_load();
+	arena.count = save;
 	return result;
 }
 
@@ -69,9 +69,9 @@ bool
 run(void)
 {
 	char **c = NULL;
-	arena_save();
+	size_t save = arena.count;
 	vec_add(&c, "./skin-view");
 	bool result = proc_wait(proc_run(c));
-	arena_load();
+	arena.count = save;
 	return result;
 }
