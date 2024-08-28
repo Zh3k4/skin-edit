@@ -1,11 +1,13 @@
 #ifndef BUILD_H
 #define BUILD_H
 
-#if defined(WIN32) && !defined(_WIN32)
-#	define _WIN32
+#if defined(PLATFORM_WINDOWS) || defined(_WIN64) || defined(WIN32) || defined(WIN64)
+#	define PLATFORM_WINDOWS 1
+#else
+#	define PLATFORM_WINDOWS 0
 #endif
 
-#ifndef _WIN32
+#if !PLATFORM_WINDOWS
 #	define _POSIX_C_SOURCE 200809L
 #endif
 #include <assert.h>
@@ -19,7 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef _WIN32
+#if PLATFORM_WINDOWS
 #	define WIN32_LEAN_AND_MEAN
 #	define _WINUSER_
 #	define _WINGDI_
@@ -36,7 +38,7 @@
 #	include <unistd.h>
 #endif
 
-#ifdef _WIN32
+#if PLATFORM_WINDOWS
 	typedef HANDLE Proc;
 #	define INVALID_PROC INVALID_HANDLE_VALUE
 #	define SEP '\\'
