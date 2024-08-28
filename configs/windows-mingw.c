@@ -5,7 +5,7 @@ build_bundle(void)
 	const char *s = "src/bundle.c";
 	if (!target_needs_rebuild(o, &s, 1)) return true;
 
-	printf("CCLD\t%s\n", o);
+	xfprintf(stdout, "CCLD\t%s\n", o);
 	char **c = NULL;
 	arena_save();
 	vec_add_many(&c, CC, "-o", o, s, 0);
@@ -22,7 +22,7 @@ build_bundle_h(void)
 	const char *s = ".build/bundle.exe";
 	if (!target_needs_rebuild(o, &s, 1)) return true;
 
-	printf("BUNDLE\t%s\n", o);
+	xfprintf(stdout, "BUNDLE\t%s\n", o);
 	char **c = NULL;
 	arena_save();
 	vec_add(&c, (char*)s);
@@ -39,7 +39,7 @@ build_target(void)
 	const char *s = "src/main.c";
 	if (!target_needs_rebuild(o, &s, 1)) return true;
 
-	printf("CCLD\t%s\n", o);
+	xfprintf(stdout, "CCLD\t%s\n", o);
 	char **c = NULL;
 
 	arena_save();

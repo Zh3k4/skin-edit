@@ -513,7 +513,7 @@ target_needs_rebuild(const char *output, const char **inputs, size_t input_count
 		success = GetFileTime(infd, NULL, NULL, &intime);
 		CloseHandle(infd);
 		if (!success) {
-			xprintf(stderr, "Err: Could not get time of %s: %lu\n",
+			xfprintf(stderr, "Err: Could not get time of %s: %lu\n",
 				input, GetLastError());
 			return -1;
 		}
