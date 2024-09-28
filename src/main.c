@@ -62,9 +62,8 @@ char *
 lft(const char *fileName)
 {
 	for (size_t i = 0; i < resources_count; i += 1) {
-		if (strcmp(fileName, resources[i].fileName)) {
+		if (strcmp(fileName, resources[i].fileName) != 0)
 			continue;
-		}
 
 		char *res = ((char *)&bundle) + resources[i].offset;
 		size_t size = resources[i].size;
@@ -83,7 +82,8 @@ get_bundle(char *f)
 {
 	for (size_t i = 0; i < resources_count; i += 1) {
 		char *b = &((char *)bundle)[resources[i].offset];
-		if (!strcmp(f, resources[i].fileName)) return (unsigned char *)b;
+		if (strcmp(f, resources[i].fileName) == 0)
+			return (unsigned char *)b;
 	}
 	return NULL;
 }
@@ -92,7 +92,8 @@ size_t
 get_bundle_size(char *f)
 {
 	for (size_t i = 0; i < resources_count; i += 1) {
-		if (!strcmp(f, resources[i].fileName)) return resources[i].size;
+		if (strcmp(f, resources[i].fileName) == 0)
+			return resources[i].size;
 	}
 	return 0;
 }
@@ -100,7 +101,8 @@ get_bundle_size(char *f)
 bool
 update_model_with_png(char const *const fp, Model *m, Texture2D *t)
 {
-	if (!IsFileExtension(fp, ".png")) return 0;
+	if (!IsFileExtension(fp, ".png"))
+		return 0;
 
 	UnloadTexture(*t);
 	*t = LoadTexture(fp);
@@ -114,7 +116,8 @@ bool
 update_skin(char *dst, Model *models, Texture2D *texture)
 {
 	FilePathList files = LoadDroppedFiles();
-	if (!update_model_with_png(files.paths[0], models, texture)) return 0;
+	if (!update_model_with_png(files.paths[0], models, texture))
+		return 0;
 	dst = strncpy(dst, files.paths[0], PATH_MAX);
 	UnloadDroppedFiles(files);
 	return 1;
@@ -218,8 +221,10 @@ main(int argc, char **argv)
 	struct stat statbuf;
 	if (argc > 1) {
 		if (stat(argv[1], &statbuf) < 0) {
-			if (errno == ENOENT) fprintf(stderr, "File does not exist!\n");
-			else fprintf(stderr, "Could not check file %s: %s!\n", argv[1], strerror(errno));
+			if (errno == ENOENT)
+				fprintf(stderr, "File does not exist!\n");
+			else
+				fprintf(stderr, "Could not check file %s: %s!\n", argv[1], strerror(errno));
 
 			return EXIT_FAILURE;
 		}
@@ -274,9 +279,8 @@ main(int argc, char **argv)
 		queue_update = 0;
 	}
 	long new_time = GetFileModTime(skinfile);
-	if (new_time != old_time) {
+	if (new_time != old_time)
 		queue_update = 1;
-	}
 
 	bool rmb_down = IsMouseButtonDown(MOUSE_BUTTON_RIGHT);
 	bool cur_hidden = IsCursorHidden();
